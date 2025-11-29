@@ -1,0 +1,304 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { Waves, AlertTriangle, Layers, Map, Bell, X, Droplets } from 'lucide-react';
+import StationDetails from '@/components/StationDetails';
+import RegionForecast from '@/components/RegionForecast';
+import FloodZones from '@/components/FloodZones';
+import AlertsList from '@/components/AlertsList';
+import ReservoirPanel from '@/components/ReservoirPanel';
+
+// Option 1: Original FloodMap with stations (BACKUP: FloodMap.tsx.backup)
+// const FloodMap = dynamic(() => import('@/components/FloodMap'), {
+//   ssr: false,
+//   loading: () => (
+//     <div className="w-full h-full flex items-center justify-center bg-gray-900">
+//       <div className="text-gray-400">Loading map...</div>
+//     </div>
+//   ),
+// });
+
+// Option 2: Windy Map with weather layers (rain radar, wind, temp, clouds)
+const FloodMap = dynamic(() => import('@/components/WindyMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-gray-900">
+      <div className="text-gray-400">Loading Windy map...</div>
+    </div>
+  ),
+});
+
+interface Station {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  basin_id: number;
+  basin_name?: string;
+  basin_code?: string;
+}
+
+interface BasinSummary {
+  basin_id: number;
+  basin_name: string;
+  total_stations: number;
+  danger_count: number;
+  warning_count: number;
+  watch_count: number;
+  safe_count: number;
+}
+
+export default function Home() {
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  const [basins, setBasins] = useState<BasinSummary[]>([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [showBasinList, setShowBasinList] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [regionData, setRegionData] = useState<any>(null);
+  const [showFloodZones, setShowFloodZones] = useState(false);
+  const [showDamAlerts, setShowDamAlerts] = useState(false);
+  const [showReservoirs, setShowReservoirs] = useState(false);
+
+  useEffect(() => {
+    fetchOverviewData();
+    const interval = setInterval(fetchOverviewData, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchOverviewData = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/basins/summary');
+      if (response.ok) {
+        const data = await response.json();
+        setBasins(data);
+      } else {
+        console.warn('Failed to fetch basins summary');
+      }
+
+      const alertsResponse = await fetch('http://localhost:8000/api/alerts');
+      if (alertsResponse.ok) {
+        const alertsData = await alertsResponse.json();
+        const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || []);
+        setAlerts(alertsList.slice(0, 5));
+      } else {
+        console.warn('Failed to fetch alerts');
+      }
+
+      setLastUpdate(new Date());
+    } catch (error) {
+      console.error('Error fetching overview data:', error);
+      // Don't break the app if backend is not available
+    }
+  };
+
+  const handleStationClick = (station: Station) => {
+    setSelectedStation(station);
+  };
+
+  const handleCloseDetails = () => {
+    setSelectedStation(null);
+  };
+
+  const handleRegionSelect = async (region: string) => {
+    try {
+      // Map region to basin name
+      const regionToBasin: Record<string, string> = {
+        'north': 'HONG',
+        'central': 'CENTRAL',
+        'south': 'MEKONG'
+      };
+
+      const basinName = regionToBasin[region];
+      if (!basinName) return;
+
+      // Show loading state immediately
+      setRegionData({
+        region: region,
+        basin: basinName,
+        forecast: null,
+        ai_analysis: null,
+        loading: true
+      } as any);
+
+      const response = await fetch(`http://localhost:8000/api/forecast/basin/${basinName}?include_ai=true`);
+      if (!response.ok) {
+        console.error('Failed to fetch basin forecast');
+        setRegionData(null);
+        return;
+      }
+
+      const data = await response.json();
+
+      // Transform to expected format with AI analysis
+      const regionData = {
+        region: region,
+        basin: basinName,
+        forecast: data.data,
+        ai_analysis: data.ai_analysis,
+        loading: false
+      };
+
+      setRegionData(regionData);
+    } catch (error) {
+      console.error('Error fetching region data:', error);
+      setRegionData(null);
+    }
+  };
+
+  const handleCloseRegion = () => {
+    setRegionData(null);
+  };
+
+  const getRiskColor = (basin: BasinSummary) => {
+    if (basin.danger_count > 0) return 'bg-red-500';
+    if (basin.warning_count > 0) return 'bg-orange-500';
+    if (basin.watch_count > 0) return 'bg-yellow-500';
+    return 'bg-green-500';
+  };
+
+  return (
+    <div className="relative w-screen h-screen overflow-hidden bg-gray-900">
+      {/* Header */}
+      <header className="absolute top-0 left-0 right-0 z-[1000] bg-gray-900/80 backdrop-blur-sm">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Waves className="w-6 h-6 text-blue-400" />
+            <div>
+              <h1 className="text-base font-bold text-white">Hệ Thống Dự Báo Lũ Lụt</h1>
+              <p className="text-xs text-gray-400">Vietnam Flood Forecast</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="text-right text-xs text-gray-400">
+              <p>Cập nhật</p>
+              <p className="text-white">{lastUpdate ? lastUpdate.toLocaleTimeString('vi-VN') : '--:--'}</p>
+            </div>
+
+            <select
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value) {
+                  handleRegionSelect(value);
+                  e.target.value = "";
+                }
+              }}
+              className="px-2 py-1 bg-gray-800 text-white text-sm rounded border border-gray-700 hover:bg-gray-700"
+              value=""
+            >
+              <option value="">Chọn vùng</option>
+              <option value="north">Miền Bắc (Sông Hồng)</option>
+              <option value="central">Miền Trung</option>
+              <option value="south">Miền Nam (Sông Mekong)</option>
+            </select>
+
+            <button onClick={() => setShowBasinList(!showBasinList)} className="p-2 bg-gray-800 rounded hover:bg-gray-700" title="Lưu vực">
+              <Layers className="w-4 h-4 text-white" />
+            </button>
+            <button onClick={() => setShowReservoirs(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700" title="Hồ chứa EVN">
+              <Droplets className="w-4 h-4 text-white" />
+            </button>
+            <button onClick={() => setShowFloodZones(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700" title="Dự báo">
+              <Map className="w-4 h-4 text-white" />
+            </button>
+            <button onClick={() => setShowDamAlerts(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700 relative" title="Cảnh báo">
+              <Bell className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Basin List */}
+      {showBasinList && (
+        <div className="fixed right-0 top-16 bottom-0 w-64 bg-gray-900/95 backdrop-blur-md z-[1000] overflow-y-auto p-3">
+          <h2 className="text-sm font-bold text-white mb-3">Danh sách lưu vực</h2>
+          {basins.map((basin) => (
+            <div key={basin.basin_id} className="glass-card rounded p-3 mb-2">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-sm font-semibold text-white">{basin.basin_name}</h3>
+                <div className={`w-2 h-2 rounded-full ${getRiskColor(basin)}`}></div>
+              </div>
+              <div className="text-xs text-gray-400">
+                Trạm: {basin.total_stations} | Cảnh báo: {basin.danger_count + basin.warning_count}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Alerts */}
+      {alerts.length > 0 && (
+        <div className="fixed top-16 right-4 w-72 z-[900] bg-gray-900/90 backdrop-blur-sm rounded p-3 max-h-60 overflow-y-auto">
+          <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-orange-400" />
+            Cảnh báo
+          </h3>
+          {alerts.map((alert, idx) => (
+            <div key={idx} className="glass-card rounded p-2 mb-2 text-xs border-l-2 border-orange-500">
+              <div className="font-semibold text-white">{alert.station_name}</div>
+              <div className="text-gray-400">{alert.message}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="fixed bottom-4 left-4 z-[900] bg-black/40 backdrop-blur-sm rounded px-3 py-2 flex gap-4 text-xs">
+        <div className="text-center">
+          <div className="text-lg font-bold text-white">{basins.reduce((sum, b) => sum + b.total_stations, 0)}</div>
+          <div className="text-gray-400">Trạm</div>
+        </div>
+        <div className="text-center">
+          <div className="text-lg font-bold text-white">{basins.length}</div>
+          <div className="text-gray-400">Lưu vực</div>
+        </div>
+        <div className="text-center">
+          <div className="text-lg font-bold text-orange-400">{basins.reduce((sum, b) => sum + b.danger_count + b.warning_count, 0)}</div>
+          <div className="text-gray-400">Cảnh báo</div>
+        </div>
+      </div>
+
+      {/* Modals */}
+      <StationDetails station={selectedStation} onClose={handleCloseDetails} />
+      <RegionForecast regionData={regionData} onClose={handleCloseRegion} />
+
+      {showFloodZones && <FloodZones onClose={() => setShowFloodZones(false)} />}
+
+      {/* Reservoir Panel */}
+      {showReservoirs && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2000] flex items-center justify-center p-4">
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden">
+            <button
+              onClick={() => setShowReservoirs(false)}
+              className="absolute -top-2 -right-2 z-10 p-2 bg-gray-800 rounded-full hover:bg-gray-700 text-white shadow-lg"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <ReservoirPanel />
+          </div>
+        </div>
+      )}
+
+      {/* Dam Alerts Panel */}
+      {showDamAlerts && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2000] flex items-center justify-center p-4">
+          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <button
+              onClick={() => setShowDamAlerts(false)}
+              className="absolute -top-2 -right-2 z-10 p-2 bg-gray-800 rounded-full hover:bg-gray-700 text-white shadow-lg"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <AlertsList />
+          </div>
+        </div>
+      )}
+
+      {/* Map */}
+      <div className="absolute inset-0 w-full h-full z-0">
+        <FloodMap onStationClick={handleStationClick} selectedStation={selectedStation} />
+      </div>
+    </div>
+  );
+}
