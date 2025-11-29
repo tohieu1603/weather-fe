@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   X, ChevronRight, MapPin, Clock, AlertTriangle,
   Droplets, CloudRain, Sun, Thermometer, Waves, Cylinder,
-  CheckCircle, Wind, Radiation, Brain, Info
+  CheckCircle, Wind, Radiation, Brain, Info, Loader2
 } from 'lucide-react'
+import { alertsApi } from '@/lib/api'
 
 interface AlertData {
   id: string
@@ -174,57 +175,95 @@ const convertAnalysisToAlert = (data: ReservoirAnalysis): AlertData | null => {
 export default function AlertsList() {
   const [alerts, setAlerts] = useState<AlertData[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingProgress, setLoadingProgress] = useState(0)
   const [selectedAlert, setSelectedAlert] = useState<AlertData | null>(null)
   const [filter, setFilter] = useState<string>('all')
   const [summary, setSummary] = useState({ critical: 0, high: 0, medium: 0, low: 0 })
   const [categories, setCategories] = useState<Record<string, number>>({})
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     fetchAlerts()
     const interval = setInterval(fetchAlerts, 120000)
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      if (pollingRef.current) clearTimeout(pollingRef.current)
+    }
   }, [])
+
+  // Poll for job status
+  const pollJobStatus = async (jobId: string) => {
+    const maxAttempts = 60  // Max 2 minutes
+    let attempts = 0
+
+    const poll = async () => {
+      try {
+        const status = await alertsApi.getJobStatus(jobId)
+        console.log(`[Alerts Poll] Job ${jobId}: ${status.status} (${status.progress}%)`)
+        setLoadingProgress(status.progress || 0)
+
+        if (status.status === 'completed' && status.result) {
+          processAlertsData(status.result)
+          setLoading(false)
+          return
+        }
+
+        if (status.status === 'failed') {
+          console.error('Alerts job failed:', status.error)
+          setLoading(false)
+          return
+        }
+
+        attempts++
+        if (attempts < maxAttempts) {
+          pollingRef.current = setTimeout(poll, 2000)
+        } else {
+          console.warn('Polling timeout')
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Polling error:', error)
+        setLoading(false)
+      }
+    }
+
+    poll()
+  }
+
+  const processAlertsData = (weatherData: AlertsResponse) => {
+    let allAlerts: AlertData[] = weatherData.alerts || []
+    let totalSummary = weatherData.summary || { critical: 0, high: 0, medium: 0, low: 0 }
+    let allCategories: Record<string, number> = weatherData.by_category || {}
+
+    const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
+    allAlerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity])
+
+    setAlerts(allAlerts)
+    setSummary(totalSummary)
+    setCategories(allCategories)
+  }
 
   const fetchAlerts = async () => {
     try {
-      // Chỉ gọi 2 API chính để tránh server overload
-      const [weatherRes, damRes] = await Promise.all([
-        fetch('http://localhost:8000/api/alerts/realtime'),
-        fetch('http://localhost:8000/api/dam-alerts/realtime'),
-      ])
+      setLoadingProgress(0)
 
-      let allAlerts: AlertData[] = []
-      let totalSummary = { critical: 0, high: 0, medium: 0, low: 0 }
-      let allCategories: Record<string, number> = {}
+      // Use async mode to avoid blocking
+      const data = await alertsApi.getAlertsAsync()
 
-      if (weatherRes.ok) {
-        const weatherData: AlertsResponse = await weatherRes.json()
-        allAlerts = [...weatherData.alerts]
-        totalSummary = { ...weatherData.summary }
-        allCategories = { ...weatherData.by_category }
+      // Check if processing in background
+      if (data.status === 'processing' && data.job_id) {
+        console.log('[Alerts] Background processing, polling job:', data.job_id)
+        setLoading(true)
+        pollJobStatus(data.job_id)
+        return
       }
 
-      if (damRes.ok) {
-        const damData: AlertsResponse = await damRes.json()
-        allAlerts = [...allAlerts, ...damData.alerts]
-        totalSummary.critical += damData.summary.critical
-        totalSummary.high += damData.summary.high
-        totalSummary.medium += damData.summary.medium
-        totalSummary.low += damData.summary.low
-        for (const [cat, count] of Object.entries(damData.by_category)) {
-          allCategories[cat] = (allCategories[cat] || 0) + count
-        }
-      }
+      // Data returned immediately (from cache)
+      processAlertsData(data)
+      setLoading(false)
 
-      const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
-      allAlerts.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity])
-
-      setAlerts(allAlerts)
-      setSummary(totalSummary)
-      setCategories(allCategories)
     } catch (error) {
       console.error('Error fetching alerts:', error)
-    } finally {
       setLoading(false)
     }
   }
@@ -236,11 +275,30 @@ export default function AlertsList() {
       <div className="bg-white rounded-lg shadow-lg max-h-[85vh] overflow-hidden">
         <div className="p-4 border-b">
           <h2 className="text-lg font-semibold text-gray-900">Cảnh báo thiên tai</h2>
+          <p className="text-sm text-gray-500 mt-1">Đang tải dữ liệu...</p>
         </div>
-        <div className="p-4 space-y-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-20 bg-gray-100 rounded animate-pulse"></div>
-          ))}
+        <div className="p-4">
+          {/* Progress bar */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Đang tải cảnh báo...
+              </span>
+              <span>{loadingProgress}%</span>
+            </div>
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all duration-300"
+                style={{ width: `${loadingProgress}%` }}
+              />
+            </div>
+          </div>
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-20 bg-gray-100 rounded animate-pulse"></div>
+            ))}
+          </div>
         </div>
       </div>
     )

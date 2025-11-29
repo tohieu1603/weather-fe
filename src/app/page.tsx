@@ -8,6 +8,7 @@ import RegionForecast from '@/components/RegionForecast';
 import FloodZones from '@/components/FloodZones';
 import AlertsList from '@/components/AlertsList';
 import ReservoirPanel from '@/components/ReservoirPanel';
+import { forecastApi, basinsApi, alertsApi } from '@/lib/api';
 
 // Option 1: Original FloodMap with stations (BACKUP: FloodMap.tsx.backup)
 // const FloodMap = dynamic(() => import('@/components/FloodMap'), {
@@ -68,22 +69,12 @@ export default function Home() {
 
   const fetchOverviewData = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/basins/summary');
-      if (response.ok) {
-        const data = await response.json();
-        setBasins(data);
-      } else {
-        console.warn('Failed to fetch basins summary');
-      }
+      const basinsData = await basinsApi.getSummary();
+      setBasins(basinsData);
 
-      const alertsResponse = await fetch('http://localhost:8000/api/alerts');
-      if (alertsResponse.ok) {
-        const alertsData = await alertsResponse.json();
-        const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || []);
-        setAlerts(alertsList.slice(0, 5));
-      } else {
-        console.warn('Failed to fetch alerts');
-      }
+      const alertsData = await alertsApi.getAlerts();
+      const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || []);
+      setAlerts(alertsList.slice(0, 5));
 
       setLastUpdate(new Date());
     } catch (error) {
@@ -121,29 +112,105 @@ export default function Home() {
         loading: true
       } as any);
 
-      const response = await fetch(`http://localhost:8000/api/forecast/basin/${basinName}?include_ai=true`);
-      if (!response.ok) {
-        console.error('Failed to fetch basin forecast');
-        setRegionData(null);
-        return;
+      // Call API with async_mode=true (non-blocking)
+      const data = await forecastApi.getBasinForecast(basinName, true, true);
+
+      // Check if AI is still processing
+      if (data.ai_status === 'processing' && data.job_id) {
+        // Set initial data with forecast (AI still loading)
+        setRegionData({
+          region: region,
+          basin: basinName,
+          forecast: data.data,
+          ai_analysis: null,
+          loading: true  // Keep loading while AI processes
+        } as any);
+
+        // Start polling for AI result
+        pollJobStatus(data.job_id, region, basinName, data.data);
+      } else {
+        // AI completed (from cache) or no AI
+        setRegionData({
+          region: region,
+          basin: basinName,
+          forecast: data.data,
+          ai_analysis: data.ai_analysis,
+          loading: false
+        });
       }
-
-      const data = await response.json();
-
-      // Transform to expected format with AI analysis
-      const regionData = {
-        region: region,
-        basin: basinName,
-        forecast: data.data,
-        ai_analysis: data.ai_analysis,
-        loading: false
-      };
-
-      setRegionData(regionData);
     } catch (error) {
       console.error('Error fetching region data:', error);
       setRegionData(null);
     }
+  };
+
+  // Poll for AI job status until completed
+  const pollJobStatus = async (
+    jobId: string,
+    region: string,
+    basinName: string,
+    forecastData: any
+  ) => {
+    const maxAttempts = 60;  // Max 60 attempts (2 minutes with 2s interval)
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const status = await forecastApi.getJobStatus(jobId);
+        console.log(`[Poll] Job ${jobId}: ${status.status} (${status.progress}%)`);
+
+        if (status.status === 'completed') {
+          // AI analysis done!
+          setRegionData({
+            region: region,
+            basin: basinName,
+            forecast: forecastData,
+            ai_analysis: status.result,
+            loading: false
+          });
+          return;
+        }
+
+        if (status.status === 'failed') {
+          console.error('AI analysis failed:', status.error);
+          setRegionData({
+            region: region,
+            basin: basinName,
+            forecast: forecastData,
+            ai_analysis: null,
+            loading: false
+          });
+          return;
+        }
+
+        // Still processing - continue polling
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000);  // Poll every 2 seconds
+        } else {
+          console.warn('Polling timeout, showing data without AI');
+          setRegionData({
+            region: region,
+            basin: basinName,
+            forecast: forecastData,
+            ai_analysis: null,
+            loading: false
+          });
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
+        setRegionData({
+          region: region,
+          basin: basinName,
+          forecast: forecastData,
+          ai_analysis: null,
+          loading: false
+        });
+      }
+    };
+
+    // Start polling
+    poll();
   };
 
   const handleCloseRegion = () => {
