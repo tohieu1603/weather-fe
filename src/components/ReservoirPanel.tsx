@@ -68,22 +68,25 @@ export default function ReservoirPanel() {
       if (forceRefresh) setRefreshing(true)
 
       // Use api instance which has correct base URL for production
+      // GET / returns all reservoirs, POST /sync saves new data
       const response = forceRefresh
         ? await api.post('/api/evn-reservoirs/sync', [])
-        : await api.get('/api/evn-reservoirs/today')
+        : await api.get('/api/evn-reservoirs/')
 
-      const data: ReservoirResponse = response.data
+      const responseData = response.data
+      // Handle both formats: { data: [...] } or { reservoirs: [...] }
+      const reservoirList = responseData.data || responseData.reservoirs || []
 
-      if (data.data && data.data.length > 0) {
+      if (reservoirList.length > 0) {
         // Add basin info and water percent if not present
-        const enrichedData = data.data.map(r => ({
+        const enrichedData = reservoirList.map((r: ReservoirData) => ({
           ...r,
           basin: r.basin || getBasinForReservoir(r.name),
           water_percent: r.water_percent || (r.htl && r.hdbt ? Math.round((r.htl / r.hdbt) * 100) : null)
         }))
 
         setReservoirs(enrichedData)
-        setLastUpdated(data.scrapedAt || data.cachedAt || data.fetched_at || new Date().toISOString())
+        setLastUpdated(responseData.scrapedAt || responseData.cachedAt || responseData.fetched_at || new Date().toISOString())
       }
     } catch (error) {
       console.error('Error fetching reservoirs:', error)

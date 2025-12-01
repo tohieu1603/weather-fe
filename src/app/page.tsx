@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Waves, Layers, Map, Bell, X, Droplets, CloudRain } from 'lucide-react';
+import Image from 'next/image';
+import { Waves, Map, Bell, X, Droplets, CloudRain, Heart } from 'lucide-react';
 import StationDetails from '@/components/StationDetails';
 import RegionForecast from '@/components/RegionForecast';
 import FloodZones from '@/components/FloodZones';
 import AlertsList from '@/components/AlertsList';
 import ReservoirPanel from '@/components/ReservoirPanel';
 import RainfallAnalysis from '@/components/RainfallAnalysis';
-import { forecastApi, basinsApi } from '@/lib/api';
+import { forecastApi } from '@/lib/api';
 
 // Option 1: Original FloodMap with stations (BACKUP: FloodMap.tsx.backup)
 // const FloodMap = dynamic(() => import('@/components/FloodMap'), {
@@ -61,44 +62,19 @@ interface Station {
   basin_code?: string;
 }
 
-interface BasinSummary {
-  basin_id: number;
-  basin_name: string;
-  total_stations: number;
-  danger_count: number;
-  warning_count: number;
-  watch_count: number;
-  safe_count: number;
-}
-
 export default function Home() {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
-  const [basins, setBasins] = useState<BasinSummary[]>([]);
-  const [showBasinList, setShowBasinList] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [regionData, setRegionData] = useState<any>(null);
   const [showFloodZones, setShowFloodZones] = useState(false);
   const [showDamAlerts, setShowDamAlerts] = useState(false);
   const [showReservoirs, setShowReservoirs] = useState(false);
   const [showRainfallAnalysis, setShowRainfallAnalysis] = useState(false);
+  const [showDonateModal, setShowDonateModal] = useState(false);
 
   useEffect(() => {
-    fetchOverviewData();
-    const interval = setInterval(fetchOverviewData, 30 * 60 * 1000);
-    return () => clearInterval(interval);
+    setLastUpdate(new Date());
   }, []);
-
-  const fetchOverviewData = async () => {
-    try {
-      const basinsData = await basinsApi.getSummary();
-      setBasins(basinsData);
-
-      setLastUpdate(new Date());
-    } catch (error) {
-      console.error('Error fetching overview data:', error);
-      // Don't break the app if backend is not available
-    }
-  };
 
   const handleStationClick = (station: Station) => {
     setSelectedStation(station);
@@ -234,13 +210,6 @@ export default function Home() {
     setRegionData(null);
   };
 
-  const getRiskColor = (basin: BasinSummary) => {
-    if (basin.danger_count > 0) return 'bg-red-500';
-    if (basin.warning_count > 0) return 'bg-orange-500';
-    if (basin.watch_count > 0) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
-
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-gray-900 pt-16">
       {/* Header */}
@@ -280,9 +249,6 @@ export default function Home() {
             <button onClick={() => setShowRainfallAnalysis(true)} className="p-2 bg-blue-600 hover:bg-blue-700 rounded" title="Phân tích lượng mưa">
               <CloudRain className="w-4 h-4 text-white" />
             </button>
-            <button onClick={() => setShowBasinList(!showBasinList)} className="p-2 bg-gray-800 rounded hover:bg-gray-700" title="Lưu vực">
-              <Layers className="w-4 h-4 text-white" />
-            </button>
             <button onClick={() => setShowReservoirs(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700" title="Hồ chứa EVN">
               <Droplets className="w-4 h-4 text-white" />
             </button>
@@ -292,29 +258,18 @@ export default function Home() {
             <button onClick={() => setShowDamAlerts(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700 relative" title="Cảnh báo">
               <Bell className="w-4 h-4 text-white" />
             </button>
+            <button
+              onClick={() => setShowDonateModal(true)}
+              className="p-2 bg-pink-600 hover:bg-pink-700 rounded flex items-center gap-1"
+              title="Ủng hộ dự án"
+            >
+              <Heart className="w-4 h-4 text-white" />
+              <span className="text-xs text-white hidden sm:inline">Ủng hộ</span>
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Basin List */}
-      {showBasinList && (
-        <div className="fixed right-0 top-16 bottom-0 w-64 bg-gray-900/95 backdrop-blur-md z-[1000] overflow-y-auto p-3">
-          <h2 className="text-sm font-bold text-white mb-3">Danh sách lưu vực</h2>
-          {basins.map((basin) => (
-            <div key={basin.basin_id} className="glass-card rounded p-3 mb-2">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-sm font-semibold text-white">{basin.basin_name}</h3>
-                <div className={`w-2 h-2 rounded-full ${getRiskColor(basin)}`}></div>
-              </div>
-              <div className="text-xs text-gray-400">
-                Trạm: {basin.total_stations} | Cảnh báo: {basin.danger_count + basin.warning_count}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Alerts */}
       {/* Modals */}
       <StationDetails station={selectedStation} onClose={handleCloseDetails} />
       <RegionForecast regionData={regionData} onClose={handleCloseRegion} />
@@ -350,6 +305,50 @@ export default function Home() {
               <X className="w-5 h-5" />
             </button>
             <AlertsList />
+          </div>
+        </div>
+      )}
+
+      {/* Donate Modal */}
+      {showDonateModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[2500] flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md bg-gradient-to-b from-slate-950 via-slate-900 to-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+            <button
+              onClick={() => setShowDonateModal(false)}
+              className="absolute top-2 right-2 z-10 p-2 bg-gray-800/80 rounded-full hover:bg-gray-700 text-white border border-gray-700"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="px-6 pt-6 pb-5 space-y-5">
+              <div className="text-center space-y-3">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-800/80 text-xs font-medium text-pink-300 border border-gray-700">
+                  <Heart className="w-4 h-4 text-pink-400" />
+                  <span>Ủng hộ dự án</span>
+                </div>
+                <p className="text-sm text-gray-200 leading-relaxed">
+                  “Mỗi 1 sự động viên từ bạn là nguồn cảm hứng để đội ngũ phát triển thật nhiều sản phẩm, có năng lượng để nghiên cứu và phát triển thêm những dự án xã hội tốt hơn.”
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-gray-800/60 border border-gray-700 p-4 shadow-inner">
+                <div className="overflow-hidden rounded-xl bg-white/90">
+                  <Image
+                    src="/donation-qr.png"
+                    alt="QR ủng hộ LE TIEN HUNG - 7779886666"
+                    width={540}
+                    height={540}
+                    className="w-full h-full object-contain"
+                    priority
+                  />
+                </div>
+                <div className="text-center mt-4 space-y-1">
+                  <p className="text-sm font-semibold text-white tracking-wide">LE TIEN HUNG</p>
+                  <p className="text-xs text-gray-300">7779886666 · Vietcombank</p>
+                  <p className="text-[11px] text-gray-400">Quét mã VietQR để ủng hộ</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
