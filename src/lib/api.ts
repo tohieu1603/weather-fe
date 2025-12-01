@@ -43,9 +43,11 @@ export const forecastApi = {
     return response.data;
   },
 
-  // Get all forecasts
+  // Get all forecasts for all basins
   getAllForecasts: async () => {
-    const response = await api.get('/api/forecast/all');
+    const response = await api.get('/api/forecast/all', {
+      timeout: 120000 // 120s timeout for first fetch
+    });
     return response.data;
   },
 
@@ -102,6 +104,46 @@ export const reservoirApi = {
   // Get reservoir analysis for a basin
   getAnalysis: async (basinCode: string) => {
     const response = await api.get(`/api/evn/analysis/${basinCode}`);
+    return response.data;
+  },
+};
+
+export const rainfallApi = {
+  // Analyze rainfall by coordinates (lat/lon)
+  analyzeByLocation: async (lat: number, lon: number, days: number = 7) => {
+    const response = await api.get('/api/rainfall/analyze', {
+      params: { lat, lon, days }
+    });
+    return response.data;
+  },
+
+  // Analyze rainfall by province code
+  analyzeByProvince: async (provinceCode: string, days: number = 7) => {
+    const response = await api.get(`/api/rainfall/province/${provinceCode}`, {
+      params: { days }
+    });
+    return response.data;
+  },
+
+  // Search locations by name (district, ward, commune)
+  searchLocations: async (query: string, limit: number = 10) => {
+    const response = await api.get('/api/rainfall/search', {
+      params: { q: query, limit }
+    });
+    return response.data;
+  },
+
+  // Get districts of a province
+  getProvinceDistricts: async (provinceCode: string) => {
+    const response = await api.get(`/api/rainfall/province/${provinceCode}/districts`);
+    return response.data;
+  },
+
+  // Compare rainfall between multiple locations
+  compare: async (locations: string[], days: number = 7) => {
+    const response = await api.get('/api/rainfall/compare', {
+      params: { locations: locations.join(','), days }
+    });
     return response.data;
   },
 };

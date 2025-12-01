@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Droplets, AlertTriangle, TrendingUp, Waves, Calendar, ArrowUp, ArrowDown, Minus, RefreshCw } from 'lucide-react';
+import { forecastApi } from '@/lib/api';
 
 interface FloodZonesProps {
   onClose: () => void;
@@ -37,20 +38,7 @@ export default function FloodZones({ onClose }: FloodZonesProps) {
       setLoading(true);
       setError('');
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout (first fetch can be slow)
-
-      const response = await fetch('http://localhost:8000/api/forecast/all', {
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = await forecastApi.getAllForecasts();
 
       if (data.basins && Object.keys(data.basins).length > 0) {
         setForecasts(data.basins);
@@ -61,12 +49,12 @@ export default function FloodZones({ onClose }: FloodZonesProps) {
       setLoading(false);
     } catch (err: any) {
       console.error('Error fetching forecasts:', err);
-      if (err.name === 'AbortError') {
+      if (err.code === 'ECONNABORTED') {
         setError('Yêu cầu quá lâu. Vui lòng kiểm tra kết nối mạng và thử lại.');
-      } else if (err.message.includes('Failed to fetch')) {
-        setError('Không thể kết nối đến server. Đảm bảo backend đang chạy tại http://localhost:8000');
+      } else if (err.message?.includes('Network Error')) {
+        setError('Không thể kết nối đến server. Đảm bảo backend đang chạy.');
       } else {
-        setError(`Lỗi: ${err.message || 'Không thể tải dữ liệu dự báo'}`);
+        setError(`Lỗi: ${err.response?.data?.detail || err.message || 'Không thể tải dữ liệu dự báo'}`);
       }
       setLoading(false);
     }

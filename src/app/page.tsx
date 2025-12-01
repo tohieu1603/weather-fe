@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Waves, Layers, Map, Bell, X, Droplets } from 'lucide-react';
+import { Waves, Layers, Map, Bell, X, Droplets, CloudRain } from 'lucide-react';
 import StationDetails from '@/components/StationDetails';
 import RegionForecast from '@/components/RegionForecast';
 import FloodZones from '@/components/FloodZones';
 import AlertsList from '@/components/AlertsList';
 import ReservoirPanel from '@/components/ReservoirPanel';
+import RainfallAnalysis from '@/components/RainfallAnalysis';
 import { forecastApi, basinsApi } from '@/lib/api';
 
 // Option 1: Original FloodMap with stations (BACKUP: FloodMap.tsx.backup)
@@ -79,6 +80,7 @@ export default function Home() {
   const [showFloodZones, setShowFloodZones] = useState(false);
   const [showDamAlerts, setShowDamAlerts] = useState(false);
   const [showReservoirs, setShowReservoirs] = useState(false);
+  const [showRainfallAnalysis, setShowRainfallAnalysis] = useState(false);
 
   useEffect(() => {
     fetchOverviewData();
@@ -275,6 +277,9 @@ export default function Home() {
               <option value="south">Miền Nam (Sông Mekong)</option>
             </select>
 
+            <button onClick={() => setShowRainfallAnalysis(true)} className="p-2 bg-blue-600 hover:bg-blue-700 rounded" title="Phân tích lượng mưa">
+              <CloudRain className="w-4 h-4 text-white" />
+            </button>
             <button onClick={() => setShowBasinList(!showBasinList)} className="p-2 bg-gray-800 rounded hover:bg-gray-700" title="Lưu vực">
               <Layers className="w-4 h-4 text-white" />
             </button>
@@ -315,6 +320,9 @@ export default function Home() {
       <RegionForecast regionData={regionData} onClose={handleCloseRegion} />
 
       {showFloodZones && <FloodZones onClose={() => setShowFloodZones(false)} />}
+
+      {/* Rainfall Analysis Modal */}
+      <RainfallAnalysis isOpen={showRainfallAnalysis} onClose={() => setShowRainfallAnalysis(false)} />
 
       {/* Reservoir Panel */}
       {showReservoirs && (
