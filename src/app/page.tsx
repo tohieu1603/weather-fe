@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { Waves, AlertTriangle, Layers, Map, Bell, X, Droplets } from 'lucide-react';
+import { Waves, Layers, Map, Bell, X, Droplets } from 'lucide-react';
 import StationDetails from '@/components/StationDetails';
 import RegionForecast from '@/components/RegionForecast';
 import FloodZones from '@/components/FloodZones';
 import AlertsList from '@/components/AlertsList';
 import ReservoirPanel from '@/components/ReservoirPanel';
-import { forecastApi, basinsApi, alertsApi } from '@/lib/api';
+import { forecastApi, basinsApi } from '@/lib/api';
 
 // Option 1: Original FloodMap with stations (BACKUP: FloodMap.tsx.backup)
 // const FloodMap = dynamic(() => import('@/components/FloodMap'), {
@@ -30,8 +30,18 @@ import { forecastApi, basinsApi, alertsApi } from '@/lib/api';
 //   ),
 // });
 
-// Option 3: Windy Map API - Full features with Leaflet integration
-const FloodMap = dynamic(() => import('@/components/WindyMapAPI'), {
+// Option 3: Windy Map API - Full features with Leaflet integration (requires API key)
+// const FloodMap = dynamic(() => import('@/components/WindyMapAPI'), {
+//   ssr: false,
+//   loading: () => (
+//     <div className="w-full h-full flex items-center justify-center bg-gray-900">
+//       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+//     </div>
+//   ),
+// });
+
+// Windy.com iframe (official embed)
+const FloodMap = dynamic(() => import('@/components/WindyMap'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center bg-gray-900">
@@ -63,7 +73,6 @@ interface BasinSummary {
 export default function Home() {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [basins, setBasins] = useState<BasinSummary[]>([]);
-  const [alerts, setAlerts] = useState<any[]>([]);
   const [showBasinList, setShowBasinList] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [regionData, setRegionData] = useState<any>(null);
@@ -81,10 +90,6 @@ export default function Home() {
     try {
       const basinsData = await basinsApi.getSummary();
       setBasins(basinsData);
-
-      const alertsData = await alertsApi.getAlerts();
-      const alertsList = Array.isArray(alertsData) ? alertsData : (alertsData.alerts || []);
-      setAlerts(alertsList.slice(0, 5));
 
       setLastUpdate(new Date());
     } catch (error) {
@@ -235,7 +240,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-gray-900">
+    <div className="relative w-screen h-screen overflow-hidden bg-gray-900 pt-16">
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-[1000] bg-gray-900/80 backdrop-blur-sm">
         <div className="px-4 py-3 flex items-center justify-between">
@@ -305,37 +310,6 @@ export default function Home() {
       )}
 
       {/* Alerts */}
-      {alerts.length > 0 && (
-        <div className="fixed top-16 right-4 w-72 z-[900] bg-gray-900/90 backdrop-blur-sm rounded p-3 max-h-60 overflow-y-auto">
-          <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-orange-400" />
-            Cảnh báo
-          </h3>
-          {alerts.map((alert, idx) => (
-            <div key={idx} className="glass-card rounded p-2 mb-2 text-xs border-l-2 border-orange-500">
-              <div className="font-semibold text-white">{alert.station_name}</div>
-              <div className="text-gray-400">{alert.message}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Stats */}
-      <div className="fixed bottom-4 left-4 z-[900] bg-black/40 backdrop-blur-sm rounded px-3 py-2 flex gap-4 text-xs">
-        <div className="text-center">
-          <div className="text-lg font-bold text-white">{basins.reduce((sum, b) => sum + b.total_stations, 0)}</div>
-          <div className="text-gray-400">Trạm</div>
-        </div>
-        <div className="text-center">
-          <div className="text-lg font-bold text-white">{basins.length}</div>
-          <div className="text-gray-400">Lưu vực</div>
-        </div>
-        <div className="text-center">
-          <div className="text-lg font-bold text-orange-400">{basins.reduce((sum, b) => sum + b.danger_count + b.warning_count, 0)}</div>
-          <div className="text-gray-400">Cảnh báo</div>
-        </div>
-      </div>
-
       {/* Modals */}
       <StationDetails station={selectedStation} onClose={handleCloseDetails} />
       <RegionForecast regionData={regionData} onClose={handleCloseRegion} />
@@ -373,7 +347,7 @@ export default function Home() {
       )}
 
       {/* Map */}
-      <div className="absolute inset-0 w-full h-full z-0">
+      <div className="absolute inset-x-0 bottom-0 top-16 w-full h-full z-0">
         <FloodMap onStationClick={handleStationClick} selectedStation={selectedStation} />
       </div>
     </div>

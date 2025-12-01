@@ -1,219 +1,201 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Wind, Droplets, Thermometer, Eye, Cloud, Zap, Waves, MapPin, Menu, X, Satellite, CloudRain } from 'lucide-react';
+import { useMemo, useState } from "react";
+
+type OverlayOption = {
+  id: string;
+  title: string;
+  hint: string;
+};
+
+type ModelOption = {
+  id: string;
+  label: string;
+};
+
+const focusArea = { lat: 15.8, lon: 112, zoom: 5.4 };
+
+const overlays: OverlayOption[] = [
+  { id: "wind", title: "Gió", hint: "Luồng gió + jet stream" },
+  { id: "temp", title: "Nhiệt độ", hint: "Phân bố nhiệt bề mặt" },
+  { id: "rain", title: "Mưa", hint: "Mây đối lưu & mưa" },
+  { id: "clouds", title: "Mây", hint: "Mây cao + thấp" },
+  { id: "waves", title: "Sóng", hint: "Chiều cao sóng biển" },
+  { id: "pressure", title: "Áp suất", hint: "Isobar & xoáy" },
+];
+
+const models: ModelOption[] = [
+  { id: "ecmwf", label: "ECMWF" },
+  { id: "gfs", label: "GFS" },
+];
+
+const levels = [
+  { id: "surface", label: "Mặt đất" },
+  { id: "850h", label: "850 hPa" },
+  { id: "700h", label: "700 hPa" },
+];
+
+const buildWindySrc = ({
+  overlay,
+  model,
+  level,
+  hourOffset,
+}: {
+  overlay: string;
+  model: string;
+  level: string;
+  hourOffset: number;
+}) => {
+  const target = new Date();
+  target.setHours(target.getHours() + hourOffset);
+  const time = `${target.toISOString().slice(0, 13)}00`;
+
+  return `https://embed.windy.com/embed2.html?lat=${focusArea.lat}&lon=${focusArea.lon}&zoom=${focusArea.zoom}&level=${level}&overlay=${overlay}&product=${model}&menu=&message=true&type=map&location=coordinates&detail=true&detailLat=${focusArea.lat}&detailLon=${focusArea.lon}&metricWind=kt&metricTemp=C&calendar=now&pressure=true&lang=vi&time=${time}`;
+};
+
+const Chip = ({
+  active,
+  label,
+  hint,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  hint?: string;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    className={`rounded-full px-4 py-2 text-sm transition-all ${
+      active
+        ? "bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30"
+        : "bg-white/5 text-slate-200 hover:bg-white/10"
+    }`}
+    aria-pressed={active}
+  >
+    <span className="font-semibold">{label}</span>
+    {hint ? <span className="ml-2 text-xs text-slate-300">{hint}</span> : null}
+  </button>
+);
 
 interface WindyMapProps {
-  onStationClick?: (station: any) => void;
-  selectedStation?: any | null;
+  onStationClick?: (station: any) => void; // kept for compatibility with parent
+  selectedStation?: any;
 }
 
-export default function WindyMap({ onStationClick, selectedStation }: WindyMapProps) {
-  const [overlay, setOverlay] = useState('rain');
-  const [showMenu, setShowMenu] = useState(false);
+export default function WindyMap(_props: WindyMapProps) {
+  const [overlay, setOverlay] = useState<string>("wind");
+  const [model, setModel] = useState<string>("ecmwf");
+  const [level, setLevel] = useState<string>("surface");
+  const [hourOffset, setHourOffset] = useState<number>(0);
+  const [showControls, setShowControls] = useState<boolean>(true);
+  const [showInfo, setShowInfo] = useState<boolean>(false);
 
-  // Center on Vietnam
-  const lat = 16.0;
-  const lon = 108.0;
-  const zoom = 6;
-
-  const overlayCategories = [
-    {
-      category: 'Radar & Mây',
-      items: [
-        { id: 'radar', label: 'Radar thời tiết', icon: CloudRain, color: 'text-blue-400', description: 'Mưa thực tế từ radar' },
-        { id: 'satellite', label: 'Vệ tinh', icon: Satellite, color: 'text-purple-400', description: 'Ảnh vệ tinh thời gian thực' },
-        { id: 'rain', label: 'Mưa', icon: Droplets, color: 'text-blue-500', description: 'Dự báo lượng mưa' },
-        { id: 'rainAccu', label: 'Mưa tích lũy', icon: Droplets, color: 'text-blue-600', description: 'Tổng lượng mưa' },
-        { id: 'thunder', label: 'Mưa, sét', icon: Zap, color: 'text-yellow-400', description: 'Dự báo sấm sét' },
-        { id: 'clouds', label: 'Mây', icon: Cloud, color: 'text-gray-400', description: 'Độ che phủ mây' },
-      ]
-    },
-    {
-      category: 'Gió',
-      items: [
-        { id: 'wind', label: 'Gió', icon: Wind, color: 'text-cyan-400', description: 'Hướng & tốc độ gió' },
-        { id: 'gust', label: 'Gió giật', icon: Wind, color: 'text-cyan-600', description: 'Cường độ gió giật' },
-      ]
-    },
-    {
-      category: 'Nhiệt độ & Độ ẩm',
-      items: [
-        { id: 'temp', label: 'Nhiệt độ', icon: Thermometer, color: 'text-orange-400', description: 'Nhiệt độ không khí' },
-        { id: 'dewpoint', label: 'Điểm sương', icon: Thermometer, color: 'text-blue-300', description: 'Độ ẩm không khí' },
-      ]
-    },
-    {
-      category: 'Biển & Sóng',
-      items: [
-        { id: 'waves', label: 'Sóng', icon: Waves, color: 'text-teal-400', description: 'Độ cao sóng biển' },
-        { id: 'swell', label: 'Sóng lừng', icon: Waves, color: 'text-teal-600', description: 'Chu kỳ sóng' },
-      ]
-    },
-    {
-      category: 'Khác',
-      items: [
-        { id: 'pressure', label: 'Áp suất', icon: MapPin, color: 'text-indigo-400', description: 'Khí áp bề mặt' },
-        { id: 'visibility', label: 'Tầm nhìn', icon: Eye, color: 'text-gray-500', description: 'Độ rõ không khí' },
-      ]
-    }
-  ];
-
-  const getWindyUrl = () => {
-    const baseUrl = 'https://embed.windy.com/embed2.html';
-
-    // Map overlay IDs to Windy overlay names
-    const overlayMap: Record<string, string> = {
-      'radar': 'radar',
-      'satellite': 'satellite',
-      'rain': 'rain',
-      'rainAccu': 'rainAccu',
-      'thunder': 'thunder',
-      'clouds': 'clouds',
-      'wind': 'wind',
-      'gust': 'gust',
-      'temp': 'temp',
-      'dewpoint': 'dewpoint',
-      'waves': 'waves',
-      'swell': 'swell',
-      'pressure': 'pressure',
-      'visibility': 'visibility'
-    };
-
-    const params = new URLSearchParams({
-      lat: lat.toString(),
-      lon: lon.toString(),
-      detailLat: lat.toString(),
-      detailLon: lon.toString(),
-      zoom: zoom.toString(),
-      level: 'surface',
-      overlay: overlayMap[overlay] || 'rain',
-      product: 'ecmwf',
-      menu: '',
-      message: 'true',
-      marker: '',
-      calendar: 'now',
-      pressure: '',
-      type: 'map',
-      location: 'coordinates',
-      detail: '',
-      metricWind: 'km/h',
-      metricTemp: '°C',
-      radarRange: '-1'
-    });
-
-    return `${baseUrl}?${params.toString()}`;
-  };
-
-  const getCurrentOverlayInfo = () => {
-    for (const category of overlayCategories) {
-      const item = category.items.find(i => i.id === overlay);
-      if (item) return item;
-    }
-    return overlayCategories[0].items[0];
-  };
-
-  const currentOverlay = getCurrentOverlayInfo();
+  const windySrc = useMemo(
+    () => buildWindySrc({ overlay, model, level, hourOffset }),
+    [overlay, model, level, hourOffset]
+  );
 
   return (
-    <div className="relative w-full h-full bg-gray-900">
-      {/* Menu Toggle Button */}
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setShowMenu(!showMenu)}
-        className="absolute top-4 right-4 z-[1001] bg-black/40 backdrop-blur-sm rounded-lg p-2 hover:bg-black/60 transition-colors"
-        title="Lớp bản đồ"
-      >
-        {showMenu ? (
-          <X className="w-5 h-5 text-white" />
-        ) : (
-          <Menu className="w-5 h-5 text-white" />
-        )}
-      </motion.button>
+    <div className="relative min-h-screen overflow-hidden bg-slate-950">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(34,211,238,0.08),transparent_30%),radial-gradient(circle_at_70%_10%,rgba(14,165,233,0.07),transparent_25%)]" />
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/10 via-transparent to-transparent blur-2xl" />
+      </div>
 
-      {/* Layer Menu */}
-      <AnimatePresence>
-        {showMenu && (
-          <motion.div
-            initial={{ x: 300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 300, opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="absolute top-0 right-0 bottom-0 w-64 bg-gray-900/95 backdrop-blur-md z-[1000] overflow-y-auto shadow-xl"
-          >
-            <div className="p-3">
-              <h2 className="text-base font-bold text-white mb-3">Lớp bản đồ</h2>
+      <div className="absolute inset-0">
+        <iframe
+          title="Windy weather map"
+          className="h-full w-full"
+          src={windySrc}
+          frameBorder="0"
+          allowFullScreen
+        />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-950/60 via-transparent to-transparent" />
+      </div>
 
-              {overlayCategories.map((category) => (
-                <div key={category.category} className="mb-4">
-                  <h3 className="text-xs font-medium text-gray-500 mb-2 uppercase">
-                    {category.category}
-                  </h3>
-                  <div className="grid grid-cols-2 gap-1">
-                    {category.items.map((item) => {
-                      const isActive = overlay === item.id;
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={() => {
-                            setOverlay(item.id);
-                            setShowMenu(false);
-                          }}
-                          className={`
-                            px-2 py-1.5 rounded text-xs text-left transition-colors
-                            ${isActive
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700'
-                            }
-                          `}
-                        >
-                          {item.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+      {showControls ? (
+        <header className="glass fixed top-5 left-5 right-5 z-20 flex flex-col gap-4 rounded-3xl p-5 md:right-auto md:max-w-3xl">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-200">
+                Thời tiết trực tiếp
+              </span>
+              <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-200">
+                Biển Đông · Châu Á
+              </span>
+              <span className="text-xs text-slate-300">Map full screen</span>
+              <button
+                type="button"
+                onClick={() => setShowInfo((v) => !v)}
+                className="ml-auto rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-100 hover:bg-white/20"
+              >
+                {showInfo ? "Ẩn mô tả" : "Hiện mô tả"}
+              </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {showInfo ? (
+              <>
+                <h1 className="text-balance text-2xl font-semibold leading-tight text-slate-50 sm:text-3xl">
+                  Bản đồ gió & thời tiết Next.js 16 cho Việt Nam và Biển Đông
+                </h1>
+                <p className="max-w-3xl text-sm text-slate-200">
+                  Chọn lớp phủ (gió/mưa/nhiệt độ/mây/sóng/áp suất), mô hình ECMWF/GFS, độ cao và tua thời gian 0–72h. Ảnh động hiển thị toàn màn hình, tương tự windy.com.
+                </p>
+              </>
+            ) : null}
+          </div>
 
-      {/* Windy Attribution */}
-      <div className="absolute bottom-2 right-2 z-[1000] bg-black/30 rounded px-2 py-1 text-xs text-gray-400">
-        <a
-          href="https://www.windy.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-white"
-        >
-          Windy.com
-        </a>
-      </div>
+          <div className="flex flex-wrap gap-2">
+            {models.map((m) => (
+              <Chip key={m.id} active={model === m.id} label={m.label} onClick={() => setModel(m.id)} />
+            ))}
+          </div>
 
-      {/* Info Badge - Compact */}
-      <div className="absolute top-4 left-4 z-[1000] bg-black/40 backdrop-blur-sm rounded-lg px-3 py-2">
-        <div className="flex items-center gap-2">
-          {(() => {
-            const Icon = currentOverlay.icon;
-            return <Icon className={`w-4 h-4 ${currentOverlay.color}`} />;
-          })()}
-          <span className="text-white text-sm font-medium">{currentOverlay.label}</span>
-        </div>
-      </div>
+          <div className="flex flex-wrap gap-2">
+            {overlays.map((item) => (
+              <Chip
+                key={item.id}
+                active={overlay === item.id}
+                label={item.title}
+                hint={item.hint}
+                onClick={() => setOverlay(item.id)}
+              />
+            ))}
+          </div>
 
-      {/* Windy Iframe */}
-      <iframe
-        src={getWindyUrl()}
-        width="100%"
-        height="100%"
-        frameBorder="0"
-        style={{ border: 0 }}
-        allowFullScreen
-        className="w-full h-full"
-      />
+          <div className="flex flex-wrap gap-2">
+            {levels.map((lvl) => (
+              <Chip key={lvl.id} active={level === lvl.id} label={lvl.label} onClick={() => setLevel(lvl.id)} />
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 text-sm text-slate-200">
+              <span className="rounded-full bg-cyan-500/20 px-3 py-1 font-semibold text-cyan-100">+{hourOffset}h</span>
+              <p className="text-slate-300">Tua thời gian dự báo (0 – 72h)</p>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={72}
+              step={3}
+              value={hourOffset}
+              onChange={(e) => setHourOffset(Number(e.target.value))}
+              className="h-2 w-full rounded-full bg-white/10 accent-cyan-400 sm:w-64"
+            />
+          </div>
+        </header>
+      ) : null}
+
+      <div className="pointer-events-none fixed inset-0 z-10 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+
+      <button
+        type="button"
+        onClick={() => setShowControls((v) => !v)}
+        className="glass fixed bottom-5 right-5 z-30 rounded-full px-4 py-2 text-sm font-semibold text-slate-100 shadow-lg shadow-black/30"
+      >
+        {showControls ? "Ẩn điều khiển" : "Hiện điều khiển"}
+      </button>
     </div>
   );
 }
