@@ -20,12 +20,22 @@ import { forecastApi, basinsApi, alertsApi } from '@/lib/api';
 //   ),
 // });
 
-// Option 2: Windy Map with weather layers (rain radar, wind, temp, clouds)
-const FloodMap = dynamic(() => import('@/components/WindyMap'), {
+// Option 2: Windy Embed (iframe) - Basic, no API key needed
+// const FloodMap = dynamic(() => import('@/components/WindyMap'), {
+//   ssr: false,
+//   loading: () => (
+//     <div className="w-full h-full flex items-center justify-center bg-gray-900">
+//       <div className="text-gray-400">Loading Windy map...</div>
+//     </div>
+//   ),
+// });
+
+// Option 3: Windy Map API - Full features with Leaflet integration
+const FloodMap = dynamic(() => import('@/components/WindyMapAPI'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center bg-gray-900">
-      <div className="text-gray-400">Loading Windy map...</div>
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
     </div>
   ),
 });
