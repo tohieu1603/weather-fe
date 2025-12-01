@@ -174,7 +174,10 @@ export default function WindyMap(_props: WindyMapProps) {
     (preset.hourOffset === undefined || hourOffset === preset.hourOffset);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950">
+    <div
+      className="relative overflow-hidden bg-slate-950"
+      style={{ minHeight: 'var(--app-height, 100dvh)' }}
+    >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(34,211,238,0.08),transparent_30%),radial-gradient(circle_at_70%_10%,rgba(14,165,233,0.07),transparent_25%)]" />
         <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/10 via-transparent to-transparent blur-2xl" />
@@ -194,16 +197,15 @@ export default function WindyMap(_props: WindyMapProps) {
       <button
         type="button"
         onClick={() => setShowControls((v) => !v)}
-        className="glass fixed left-3 z-40 rounded-full px-4 py-2 text-sm font-semibold text-slate-100 shadow-lg shadow-black/30 sm:left-5"
-        style={{ top: "80px" }}
+        className="glass fixed left-3 bottom-[calc(env(safe-area-inset-bottom,0px)+16px)] z-40 rounded-full px-4 py-2 text-sm font-semibold text-slate-100 shadow-lg shadow-black/30 sm:left-5 sm:bottom-auto sm:top-[88px]"
       >
         {showControls ? "Ẩn điều khiển" : "Hiện điều khiển"}
       </button>
 
       {/* Banner chạy text Hoàng Sa Trường Sa - đặt lên che khu vực logo Windy */}
       <div
-        className="pointer-events-none fixed left-1/2 z-40 w-[80vw] max-w-xl -translate-x-1/2"
-        style={{ top: "72px" }}
+        className="pointer-events-none fixed left-1/2 z-40 w-[92vw] max-w-xl -translate-x-1/2 sm:w-[80vw]"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 64px)' }}
       >
         <div className="marquee-track rounded-full bg-slate-950/90 px-4 py-2 text-center text-sm font-semibold text-slate-100 ring-1 ring-white/10 backdrop-blur">
           <div className="marquee-rail">
@@ -218,10 +220,9 @@ export default function WindyMap(_props: WindyMapProps) {
       </div>
 
       <div
-        className="glass fixed right-4 z-30 flex w-[60px] flex-col items-center gap-2 rounded-2xl p-2 shadow-lg shadow-black/30 sm:right-3"
-        style={{ top: "180px" }} // lùi xuống thêm ~100px so với vị trí trước
+        className="glass fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom,0px)+68px)] z-30 flex items-center justify-center gap-2 rounded-2xl p-2 shadow-lg shadow-black/30 sm:inset-auto sm:right-4 sm:top-[180px] sm:w-[60px] sm:flex-col sm:items-center sm:gap-2 sm:bottom-auto"
       >
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:flex-col sm:items-center sm:justify-start">
           {presets.map((preset) => {
             const active = isPresetActive(preset);
             const overlayTitle = overlayTitleById[preset.overlay] ?? preset.overlay;
@@ -232,7 +233,7 @@ export default function WindyMap(_props: WindyMapProps) {
                 title={`${preset.label} · ${overlayTitle}`}
                 aria-label={`${preset.label} · ${overlayTitle}`}
                 onClick={() => applyPreset(preset)}
-                className={`flex h-12 w-12 items-center justify-center rounded-xl border transition-all ${
+                className={`flex h-12 w-12 items-center justify-center rounded-xl border transition-all sm:h-12 sm:w-12 ${
                   active
                     ? "border-cyan-400/70 bg-cyan-500/20 text-slate-50 shadow-md shadow-cyan-500/30"
                     : "border-white/10 bg-white/5 text-slate-200 hover:border-white/40 hover:bg-white/10"
@@ -246,7 +247,7 @@ export default function WindyMap(_props: WindyMapProps) {
       </div>
 
       {showControls ? (
-        <header className="glass fixed top-5 left-5 right-5 z-20 flex flex-col gap-4 rounded-3xl p-5 md:right-auto md:max-w-3xl">
+        <header className="glass fixed left-4 right-4 top-[calc(env(safe-area-inset-top,0px)+10px)] z-20 flex max-h-[70vh] flex-col gap-4 overflow-y-auto rounded-3xl p-4 sm:left-5 sm:right-auto sm:max-w-3xl sm:p-5">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-200">

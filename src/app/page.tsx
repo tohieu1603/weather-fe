@@ -74,6 +74,13 @@ export default function Home() {
 
   useEffect(() => {
     setLastUpdate(new Date());
+    const setAppHeight = () => {
+      const height = window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', `${height}px`);
+    };
+    setAppHeight();
+    window.addEventListener('resize', setAppHeight);
+    return () => window.removeEventListener('resize', setAppHeight);
   }, []);
 
   const handleStationClick = (station: Station) => {
@@ -211,10 +218,16 @@ export default function Home() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-gray-900 pt-16">
+    <div
+      className="relative w-full overflow-hidden bg-gray-900"
+      style={{ minHeight: 'var(--app-height, 100dvh)' }}
+    >
       {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-[1000] bg-gray-900/80 backdrop-blur-sm">
-        <div className="px-4 py-3 flex items-center justify-between">
+      <header
+        className="absolute top-0 left-0 right-0 z-[1000] bg-gray-900/80 backdrop-blur-sm shadow-sm border-b border-gray-800/60"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)' }}
+      >
+        <div className="px-4 pb-3 pt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Waves className="w-6 h-6 text-blue-400" />
             <div>
@@ -223,49 +236,52 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="text-right text-xs text-gray-400">
-              <p>Cập nhật</p>
-              <p className="text-white">{lastUpdate ? lastUpdate.toLocaleTimeString('vi-VN') : '--:--'}</p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex items-center gap-2">
+              <div className="text-left sm:text-right text-xs text-gray-400 min-w-[86px]">
+                <p>Cập nhật</p>
+                <p className="text-white">{lastUpdate ? lastUpdate.toLocaleTimeString('vi-VN') : '--:--'}</p>
+              </div>
+              <select
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value) {
+                    handleRegionSelect(value);
+                    e.target.value = "";
+                  }
+                }}
+                className="min-w-[160px] px-2 py-2 bg-gray-800 text-white text-sm rounded border border-gray-700 hover:bg-gray-700"
+                value=""
+              >
+                <option value="">Chọn vùng</option>
+                <option value="north">Miền Bắc (Sông Hồng)</option>
+                <option value="central">Miền Trung</option>
+                <option value="south">Miền Nam (Sông Mekong)</option>
+              </select>
             </div>
 
-            <select
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value) {
-                  handleRegionSelect(value);
-                  e.target.value = "";
-                }
-              }}
-              className="px-2 py-1 bg-gray-800 text-white text-sm rounded border border-gray-700 hover:bg-gray-700"
-              value=""
-            >
-              <option value="">Chọn vùng</option>
-              <option value="north">Miền Bắc (Sông Hồng)</option>
-              <option value="central">Miền Trung</option>
-              <option value="south">Miền Nam (Sông Mekong)</option>
-            </select>
-
-            <button onClick={() => setShowRainfallAnalysis(true)} className="p-2 bg-blue-600 hover:bg-blue-700 rounded" title="Phân tích lượng mưa">
-              <CloudRain className="w-4 h-4 text-white" />
-            </button>
-            <button onClick={() => setShowReservoirs(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700" title="Hồ chứa EVN">
-              <Droplets className="w-4 h-4 text-white" />
-            </button>
-            <button onClick={() => setShowFloodZones(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700" title="Dự báo">
-              <Map className="w-4 h-4 text-white" />
-            </button>
-            <button onClick={() => setShowDamAlerts(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700 relative" title="Cảnh báo">
-              <Bell className="w-4 h-4 text-white" />
-            </button>
-            <button
-              onClick={() => setShowDonateModal(true)}
-              className="p-2 bg-pink-600 hover:bg-pink-700 rounded flex items-center gap-1"
-              title="Ủng hộ dự án"
-            >
-              <Heart className="w-4 h-4 text-white" />
-              <span className="text-xs text-white hidden sm:inline">Ủng hộ</span>
-            </button>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+              <button onClick={() => setShowRainfallAnalysis(true)} className="p-2 bg-blue-600 hover:bg-blue-700 rounded shrink-0" title="Phân tích lượng mưa">
+                <CloudRain className="w-4 h-4 text-white" />
+              </button>
+              <button onClick={() => setShowReservoirs(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700 shrink-0" title="Hồ chứa EVN">
+                <Droplets className="w-4 h-4 text-white" />
+              </button>
+              <button onClick={() => setShowFloodZones(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700 shrink-0" title="Dự báo">
+                <Map className="w-4 h-4 text-white" />
+              </button>
+              <button onClick={() => setShowDamAlerts(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700 relative shrink-0" title="Cảnh báo">
+                <Bell className="w-4 h-4 text-white" />
+              </button>
+              <button
+                onClick={() => setShowDonateModal(true)}
+                className="p-2 bg-pink-600 hover:bg-pink-700 rounded flex items-center gap-1 shrink-0"
+                title="Ủng hộ dự án"
+              >
+                <Heart className="w-4 h-4 text-white" />
+                <span className="text-xs text-white hidden sm:inline">Ủng hộ</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -354,7 +370,7 @@ export default function Home() {
       )}
 
       {/* Map */}
-      <div className="absolute inset-x-0 bottom-0 top-16 w-full h-full z-0">
+      <div className="absolute inset-0 w-full h-full z-0">
         <FloodMap onStationClick={handleStationClick} selectedStation={selectedStation} />
       </div>
     </div>
