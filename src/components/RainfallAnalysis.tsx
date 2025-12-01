@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, MapPin, Loader2, CloudRain, Droplets, Clock,
-  AlertTriangle, CheckCircle, Navigation, Search, ChevronDown, ChevronRight
+  AlertTriangle, CheckCircle, Navigation, Search, ChevronDown, ChevronRight,
+  Thermometer, Wind, Sun, Info
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
@@ -26,6 +27,26 @@ interface DailyForecast {
   risk_code: string;
   risk_level: string;
   risk_description: string;
+  temperature?: {
+    max: number | null;
+    min: number | null;
+    feels_like_max: number | null;
+    feels_like_min: number | null;
+  };
+  wind?: {
+    max_speed_kmh: number;
+    max_gust_kmh: number;
+    direction_name: string;
+    description: string;
+  };
+  uv_index?: {
+    value: number;
+    description: string;
+  };
+  sun?: {
+    sunrise: string;
+    sunset: string;
+  };
 }
 
 interface RainfallData {
@@ -33,6 +54,7 @@ interface RainfallData {
     code?: string;
     name?: string;
     region?: string;
+    region_name?: string;
     coordinates?: {
       latitude: number;
       longitude: number;
@@ -48,6 +70,21 @@ interface RainfallData {
       name: string;
       region: string;
     };
+    details?: {
+      description?: string;
+      population?: string;
+      area?: string;
+      elevation?: string;
+      flood_zones?: string[];
+      rivers?: string[];
+      notes?: string;
+    };
+    climate_info?: {
+      climate?: string;
+      terrain?: string;
+      flood_risk?: string;
+      avg_annual_rainfall?: string;
+    };
   };
   analysis: {
     summary: {
@@ -57,7 +94,15 @@ interface RainfallData {
       avg_daily_rainfall_mm: number;
       total_rain_hours: number;
       forecast_days: number;
+      temperature_range?: {
+        max: number | null;
+        min: number | null;
+        avg_high: number;
+        avg_low: number;
+      };
+      wind_max_kmh?: number;
     };
+    description?: string;
     overall_risk: {
       code: string;
       level: string;
@@ -627,13 +672,80 @@ export default function RainfallAnalysis({ isOpen, onClose }: RainfallAnalysisPr
                     <div className="flex-1">
                       <h3 className="font-medium text-white">{getLocationName()}</h3>
                       {getCoordinates() && <p className="text-xs text-gray-500 mt-1">{getCoordinates()}</p>}
-                      {data.location.region && <span className="text-xs text-gray-500">Vùng: {data.location.region}</span>}
+                      {data.location.region_name && <span className="text-xs text-blue-400">{data.location.region_name}</span>}
                     </div>
                     <button onClick={() => { setData(null); resetSelection(); }} className="text-xs text-blue-400 hover:text-blue-300">
                       Đổi vị trí
                     </button>
                   </div>
                 </div>
+
+                {/* Weather Description */}
+                {data.analysis?.description && (
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                    <p className="text-sm text-blue-200">{data.analysis.description}</p>
+                  </div>
+                )}
+
+                {/* Location Details (if available) */}
+                {data.location.details && (
+                  <div className="bg-gray-800/30 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Info className="w-4 h-4 text-gray-400" />
+                      <h4 className="text-xs font-medium text-gray-400">Thông tin khu vực</h4>
+                    </div>
+                    <div className="space-y-2 text-xs">
+                      {data.location.details.description && (
+                        <p className="text-gray-300">{data.location.details.description}</p>
+                      )}
+                      <div className="grid grid-cols-2 gap-2 text-gray-400">
+                        {data.location.details.population && (
+                          <div>Dân số: <span className="text-white">{data.location.details.population}</span></div>
+                        )}
+                        {data.location.details.area && (
+                          <div>Diện tích: <span className="text-white">{data.location.details.area}</span></div>
+                        )}
+                        {data.location.details.elevation && (
+                          <div>Độ cao: <span className="text-white">{data.location.details.elevation}</span></div>
+                        )}
+                      </div>
+                      {data.location.details.rivers && data.location.details.rivers.length > 0 && (
+                        <div className="text-gray-400">
+                          Sông: <span className="text-cyan-400">{data.location.details.rivers.join(', ')}</span>
+                        </div>
+                      )}
+                      {data.location.details.flood_zones && data.location.details.flood_zones.length > 0 && (
+                        <div className="text-gray-400">
+                          Vùng hay ngập: <span className="text-orange-400">{data.location.details.flood_zones.join(', ')}</span>
+                        </div>
+                      )}
+                      {data.location.details.notes && (
+                        <p className="text-yellow-300/80 italic">{data.location.details.notes}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Climate Info */}
+                {data.location.climate_info && (
+                  <div className="bg-gray-800/30 rounded-lg p-3">
+                    <h4 className="text-xs font-medium text-gray-400 mb-2">Đặc điểm khí hậu vùng</h4>
+                    <div className="space-y-1.5 text-xs">
+                      {data.location.climate_info.climate && (
+                        <p className="text-gray-300">{data.location.climate_info.climate}</p>
+                      )}
+                      {data.location.climate_info.terrain && (
+                        <p className="text-gray-400">🏔️ {data.location.climate_info.terrain}</p>
+                      )}
+                      {data.location.climate_info.flood_risk && (
+                        <p className="text-orange-300">⚠️ {data.location.climate_info.flood_risk}</p>
+                      )}
+                      {data.location.climate_info.avg_annual_rainfall && (
+                        <p className="text-blue-300">🌧️ Lượng mưa TB: {data.location.climate_info.avg_annual_rainfall}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Overall Risk */}
                 {data.analysis?.overall_risk && (
@@ -655,22 +767,50 @@ export default function RainfallAnalysis({ isOpen, onClose }: RainfallAnalysisPr
 
                 {/* Summary Stats */}
                 {data.analysis?.summary && (
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                      <Droplets className="w-5 h-5 text-blue-400 mx-auto mb-1" />
-                      <div className="text-lg font-bold text-white">{data.analysis.summary.total_rainfall_mm}</div>
-                      <div className="text-[10px] text-gray-500">mm tổng</div>
+                  <div className="space-y-2">
+                    {/* Rain stats */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                        <Droplets className="w-5 h-5 text-blue-400 mx-auto mb-1" />
+                        <div className="text-lg font-bold text-white">{data.analysis.summary.total_rainfall_mm}</div>
+                        <div className="text-[10px] text-gray-500">mm tổng</div>
+                      </div>
+                      <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                        <CloudRain className="w-5 h-5 text-orange-400 mx-auto mb-1" />
+                        <div className="text-lg font-bold text-white">{data.analysis.summary.max_daily_rainfall_mm}</div>
+                        <div className="text-[10px] text-gray-500">mm đỉnh</div>
+                      </div>
+                      <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                        <Clock className="w-5 h-5 text-cyan-400 mx-auto mb-1" />
+                        <div className="text-lg font-bold text-white">{data.analysis.summary.total_rain_hours}</div>
+                        <div className="text-[10px] text-gray-500">giờ mưa</div>
+                      </div>
                     </div>
-                    <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                      <CloudRain className="w-5 h-5 text-orange-400 mx-auto mb-1" />
-                      <div className="text-lg font-bold text-white">{data.analysis.summary.max_daily_rainfall_mm}</div>
-                      <div className="text-[10px] text-gray-500">mm đỉnh</div>
-                    </div>
-                    <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                      <Clock className="w-5 h-5 text-cyan-400 mx-auto mb-1" />
-                      <div className="text-lg font-bold text-white">{data.analysis.summary.total_rain_hours}</div>
-                      <div className="text-[10px] text-gray-500">giờ mưa</div>
-                    </div>
+                    {/* Temperature and wind stats */}
+                    {(data.analysis.summary.temperature_range || data.analysis.summary.wind_max_kmh) && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {data.analysis.summary.temperature_range && (
+                          <div className="bg-gray-800/50 rounded-lg p-3 flex items-center gap-3">
+                            <Thermometer className="w-5 h-5 text-red-400" />
+                            <div>
+                              <div className="text-sm font-medium text-white">
+                                {data.analysis.summary.temperature_range.min?.toFixed(0)}° - {data.analysis.summary.temperature_range.max?.toFixed(0)}°C
+                              </div>
+                              <div className="text-[10px] text-gray-500">Nhiệt độ</div>
+                            </div>
+                          </div>
+                        )}
+                        {data.analysis.summary.wind_max_kmh && (
+                          <div className="bg-gray-800/50 rounded-lg p-3 flex items-center gap-3">
+                            <Wind className="w-5 h-5 text-teal-400" />
+                            <div>
+                              <div className="text-sm font-medium text-white">{data.analysis.summary.wind_max_kmh} km/h</div>
+                              <div className="text-[10px] text-gray-500">Gió tối đa</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -718,21 +858,49 @@ export default function RainfallAnalysis({ isOpen, onClose }: RainfallAnalysisPr
                 {data.analysis?.daily_forecast && data.analysis.daily_forecast.length > 0 && (
                   <div className="bg-gray-800/30 rounded-lg p-3">
                     <h4 className="text-xs font-medium text-gray-400 mb-3">Chi tiết theo ngày</h4>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
                       {data.analysis.daily_forecast.map((day, i) => (
-                        <div key={i} className="flex items-center justify-between p-2 bg-gray-800/50 rounded">
-                          <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: getRiskBgColor(day.risk_code) }} />
-                            <div>
-                              <div className="text-sm text-white">{formatDate(day.date)}</div>
-                              <div className="text-[10px] text-gray-500">{day.rain_hours}h mưa</div>
+                        <div key={i} className="p-2 bg-gray-800/50 rounded">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: getRiskBgColor(day.risk_code) }} />
+                              <div>
+                                <div className="text-sm text-white">{formatDate(day.date)}</div>
+                                <div className="text-[10px] text-gray-500">{day.rain_hours}h mưa</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-medium text-blue-400">{day.precipitation_mm} mm</div>
+                              <div className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: `${getRiskBgColor(day.risk_code)}20`, color: getRiskBgColor(day.risk_code) }}>
+                                {day.risk_level}
+                              </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-sm font-medium text-blue-400">{day.precipitation_mm} mm</div>
-                            <div className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: `${getRiskBgColor(day.risk_code)}20`, color: getRiskBgColor(day.risk_code) }}>
-                              {day.risk_level}
-                            </div>
+                          {/* Additional weather details */}
+                          <div className="mt-2 pt-2 border-t border-gray-700/50 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-400">
+                            {day.temperature?.max !== null && day.temperature?.min !== null && (
+                              <span className="flex items-center gap-1">
+                                <Thermometer className="w-3 h-3 text-red-400" />
+                                {day.temperature.min?.toFixed(0)}° - {day.temperature.max?.toFixed(0)}°C
+                              </span>
+                            )}
+                            {day.wind && day.wind.max_speed_kmh > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Wind className="w-3 h-3 text-teal-400" />
+                                {day.wind.max_speed_kmh} km/h {day.wind.direction_name}
+                              </span>
+                            )}
+                            {day.uv_index && day.uv_index.value > 0 && (
+                              <span className="flex items-center gap-1">
+                                <Sun className="w-3 h-3 text-yellow-400" />
+                                UV {day.uv_index.value}
+                              </span>
+                            )}
+                            {day.sun?.sunrise && day.sun?.sunset && (
+                              <span className="text-gray-500">
+                                ☀️ {day.sun.sunrise} - 🌙 {day.sun.sunset}
+                              </span>
+                            )}
                           </div>
                         </div>
                       ))}
