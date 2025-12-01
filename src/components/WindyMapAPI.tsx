@@ -159,7 +159,7 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 // Hardcoded API key
-const WINDY_API_KEY = 'IFKifo8VteIktsG6XBSs6zZUQnk5x3ch';
+const WINDY_API_KEY = 'wx4i4uC0wLr8c7QzgdjDS4UzmlObgv2m';
 
 export default function WindyMapAPI({
   onStationClick,
