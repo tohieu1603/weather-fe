@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from "react";
+import { Wind, CloudRain, Thermometer, Waves, Gauge } from "lucide-react";
 
 type OverlayOption = {
   id: string;
@@ -11,6 +12,16 @@ type OverlayOption = {
 type ModelOption = {
   id: string;
   label: string;
+};
+
+type PresetOption = {
+  id: string;
+  label: string;
+  overlay: string;
+  model?: string;
+  level?: string;
+  hourOffset?: number;
+  icon: JSX.Element;
 };
 
 const focusArea = { lat: 15.8, lon: 112, zoom: 5.4 };
@@ -33,6 +44,59 @@ const levels = [
   { id: "surface", label: "Mặt đất" },
   { id: "850h", label: "850 hPa" },
   { id: "700h", label: "700 hPa" },
+];
+
+const overlayTitleById = overlays.reduce<Record<string, string>>((acc, item) => {
+  acc[item.id] = item.title;
+  return acc;
+}, {});
+
+const presets: PresetOption[] = [
+  {
+    id: "wind-surface",
+    label: "Gió bề mặt",
+    overlay: "wind",
+    model: "ecmwf",
+    level: "surface",
+    hourOffset: 0,
+    icon: <Wind className="h-5 w-5" />,
+  },
+  {
+    id: "rain-24h",
+    label: "Mưa + mây",
+    overlay: "rain",
+    model: "gfs",
+    level: "surface",
+    hourOffset: 24,
+    icon: <CloudRain className="h-5 w-5" />,
+  },
+  {
+    id: "temp-surface",
+    label: "Nhiệt độ bề mặt",
+    overlay: "temp",
+    model: "ecmwf",
+    level: "surface",
+    hourOffset: 0,
+    icon: <Thermometer className="h-5 w-5" />,
+  },
+  {
+    id: "pressure-jet",
+    label: "Áp suất & xoáy",
+    overlay: "pressure",
+    model: "ecmwf",
+    level: "850h",
+    hourOffset: 0,
+    icon: <Gauge className="h-5 w-5" />,
+  },
+  {
+    id: "waves-sea",
+    label: "Sóng biển",
+    overlay: "waves",
+    model: "gfs",
+    level: "surface",
+    hourOffset: 0,
+    icon: <Waves className="h-5 w-5" />,
+  },
 ];
 
 const buildWindySrc = ({
@@ -88,13 +152,26 @@ export default function WindyMap(_props: WindyMapProps) {
   const [model, setModel] = useState<string>("ecmwf");
   const [level, setLevel] = useState<string>("surface");
   const [hourOffset, setHourOffset] = useState<number>(0);
-  const [showControls, setShowControls] = useState<boolean>(true);
+  const [showControls, setShowControls] = useState<boolean>(false);
   const [showInfo, setShowInfo] = useState<boolean>(false);
 
   const windySrc = useMemo(
     () => buildWindySrc({ overlay, model, level, hourOffset }),
     [overlay, model, level, hourOffset]
   );
+
+  const applyPreset = (preset: PresetOption) => {
+    setOverlay(preset.overlay);
+    if (preset.model) setModel(preset.model);
+    if (preset.level) setLevel(preset.level);
+    if (typeof preset.hourOffset === "number") setHourOffset(preset.hourOffset);
+  };
+
+  const isPresetActive = (preset: PresetOption) =>
+    overlay === preset.overlay &&
+    (!preset.model || model === preset.model) &&
+    (!preset.level || level === preset.level) &&
+    (preset.hourOffset === undefined || hourOffset === preset.hourOffset);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-950">
@@ -112,6 +189,60 @@ export default function WindyMap(_props: WindyMapProps) {
           allowFullScreen
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-950/60 via-transparent to-transparent" />
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setShowControls((v) => !v)}
+        className="glass fixed left-3 z-40 rounded-full px-4 py-2 text-sm font-semibold text-slate-100 shadow-lg shadow-black/30 sm:left-5"
+        style={{ top: "80px" }}
+      >
+        {showControls ? "Ẩn điều khiển" : "Hiện điều khiển"}
+      </button>
+
+      {/* Banner chạy text Hoàng Sa Trường Sa - đặt lên che khu vực logo Windy */}
+      <div
+        className="pointer-events-none fixed left-1/2 z-40 w-[80vw] max-w-xl -translate-x-1/2"
+        style={{ top: "72px" }}
+      >
+        <div className="marquee-track rounded-full bg-slate-950/90 px-4 py-2 text-center text-sm font-semibold text-slate-100 ring-1 ring-white/10 backdrop-blur">
+          <div className="marquee-rail">
+            <span className="marquee-item">
+              Hoàng Sa, Trường Sa là của Việt Nam · Hoàng Sa, Trường Sa là của Việt Nam · Hoàng Sa, Trường Sa là của Việt Nam
+            </span>
+            <span className="marquee-item" aria-hidden="true">
+              Hoàng Sa, Trường Sa là của Việt Nam · Hoàng Sa, Trường Sa là của Việt Nam · Hoàng Sa, Trường Sa là của Việt Nam
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="glass fixed right-4 z-30 flex w-[60px] flex-col items-center gap-2 rounded-2xl p-2 shadow-lg shadow-black/30 sm:right-3"
+        style={{ top: "180px" }} // lùi xuống thêm ~100px so với vị trí trước
+      >
+        <div className="flex flex-col items-center gap-2">
+          {presets.map((preset) => {
+            const active = isPresetActive(preset);
+            const overlayTitle = overlayTitleById[preset.overlay] ?? preset.overlay;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                title={`${preset.label} · ${overlayTitle}`}
+                aria-label={`${preset.label} · ${overlayTitle}`}
+                onClick={() => applyPreset(preset)}
+                className={`flex h-12 w-12 items-center justify-center rounded-xl border transition-all ${
+                  active
+                    ? "border-cyan-400/70 bg-cyan-500/20 text-slate-50 shadow-md shadow-cyan-500/30"
+                    : "border-white/10 bg-white/5 text-slate-200 hover:border-white/40 hover:bg-white/10"
+                }`}
+              >
+                {preset.icon}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {showControls ? (
@@ -188,14 +319,6 @@ export default function WindyMap(_props: WindyMapProps) {
       ) : null}
 
       <div className="pointer-events-none fixed inset-0 z-10 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
-
-      <button
-        type="button"
-        onClick={() => setShowControls((v) => !v)}
-        className="glass fixed bottom-5 right-5 z-30 rounded-full px-4 py-2 text-sm font-semibold text-slate-100 shadow-lg shadow-black/30"
-      >
-        {showControls ? "Ẩn điều khiển" : "Hiện điều khiển"}
-      </button>
     </div>
   );
 }

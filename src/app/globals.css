@@ -85,3 +85,30 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Marquee text for ownership banner */
+@keyframes marquee-loop {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  position: relative;
+  overflow: hidden;
+}
+
+.marquee-rail {
+  display: flex;
+  width: max-content;
+  gap: 2rem;
+  animation: marquee-loop 24s linear infinite;
+}
+
+.marquee-item {
+  white-space: nowrap;
+  display: inline-block;
+}
