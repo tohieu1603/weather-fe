@@ -104,17 +104,19 @@ const buildWindySrc = ({
   model,
   level,
   hourOffset,
+  showDetail,
 }: {
   overlay: string;
   model: string;
   level: string;
   hourOffset: number;
+  showDetail: boolean;
 }) => {
   const target = new Date();
   target.setHours(target.getHours() + hourOffset);
   const time = `${target.toISOString().slice(0, 13)}00`;
 
-  return `https://embed.windy.com/embed2.html?lat=${focusArea.lat}&lon=${focusArea.lon}&zoom=${focusArea.zoom}&level=${level}&overlay=${overlay}&product=${model}&menu=&message=true&type=map&location=coordinates&detail=true&detailLat=${focusArea.lat}&detailLon=${focusArea.lon}&metricWind=kt&metricTemp=C&calendar=now&pressure=true&lang=vi&time=${time}`;
+  return `https://embed.windy.com/embed2.html?lat=${focusArea.lat}&lon=${focusArea.lon}&zoom=${focusArea.zoom}&level=${level}&overlay=${overlay}&product=${model}&menu=&message=true&type=map&location=coordinates&detail=${showDetail ? 'true' : 'false'}&detailLat=${focusArea.lat}&detailLon=${focusArea.lon}&metricWind=kt&metricTemp=C&calendar=now&pressure=true&lang=vi&time=${time}`;
 };
 
 const Chip = ({
@@ -154,10 +156,11 @@ export default function WindyMap(_props: WindyMapProps) {
   const [hourOffset, setHourOffset] = useState<number>(0);
   const [showControls, setShowControls] = useState<boolean>(false);
   const [showInfo, setShowInfo] = useState<boolean>(false);
+  const [showDetail, setShowDetail] = useState<boolean>(false);
 
   const windySrc = useMemo(
-    () => buildWindySrc({ overlay, model, level, hourOffset }),
-    [overlay, model, level, hourOffset]
+    () => buildWindySrc({ overlay, model, level, hourOffset, showDetail }),
+    [overlay, model, level, hourOffset, showDetail]
   );
 
   const applyPreset = (preset: PresetOption) => {
@@ -263,6 +266,13 @@ export default function WindyMap(_props: WindyMapProps) {
                 className="ml-auto rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-100 hover:bg-white/20"
               >
                 {showInfo ? "Ẩn mô tả" : "Hiện mô tả"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDetail((v) => !v)}
+                className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-100 hover:bg-white/20"
+              >
+                {showDetail ? "Ẩn thông tin điểm" : "Hiện thông tin điểm"}
               </button>
             </div>
             {showInfo ? (
