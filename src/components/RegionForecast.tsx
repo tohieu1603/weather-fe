@@ -614,65 +614,79 @@ export default function RegionForecast({ regionData, onClose }: RegionForecastPr
               )}
 
               {/* Areas Tab */}
-              {activeTab === 'areas' && ai?.affected_areas && (
+              {activeTab === 'areas' && (
                 <div className="space-y-3">
-                  <p className="text-xs text-gray-500">Click vào tỉnh để xem chi tiết huyện/xã</p>
+                  {ai?.affected_areas && ai.affected_areas.length > 0 ? (
+                    <>
+                      <p className="text-xs text-gray-500">Click vào tỉnh để xem chi tiết huyện/xã</p>
 
-                  {/* Water Level Chart */}
-                  <div className="bg-gray-800/30 rounded-lg p-3">
-                    <h3 className="text-xs font-medium text-gray-400 mb-3">Mực nước theo tỉnh (cm)</h3>
-                    <ResponsiveContainer width="100%" height={Math.min(200, provinceData.length * 24)}>
-                      <BarChart data={provinceData} layout="vertical">
-                        <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 9 }} axisLine={false} tickLine={false} />
-                        <YAxis dataKey="name" type="category" tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} width={70} />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: 6, fontSize: 11 }}
-                          formatter={(v: number) => [`${v} cm`]}
-                          labelFormatter={(l) => provinceData.find(p => p.name === l)?.fullName}
-                        />
-                        <Bar dataKey="water_level_cm" radius={[0, 4, 4, 0]} barSize={14}>
-                          {provinceData.map((entry, i) => (
-                            <Cell key={i} fill={entry.color} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                      {/* Water Level Chart */}
+                      <div className="bg-gray-800/30 rounded-lg p-3">
+                        <h3 className="text-xs font-medium text-gray-400 mb-3">Mực nước theo tỉnh (cm)</h3>
+                        <ResponsiveContainer width="100%" height={Math.min(200, provinceData.length * 24)}>
+                          <BarChart data={provinceData} layout="vertical">
+                            <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 9 }} axisLine={false} tickLine={false} />
+                            <YAxis dataKey="name" type="category" tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} width={70} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: 6, fontSize: 11 }}
+                              formatter={(v: number) => [`${v} cm`]}
+                              labelFormatter={(l) => provinceData.find(p => p.name === l)?.fullName}
+                            />
+                            <Bar dataKey="water_level_cm" radius={[0, 4, 4, 0]} barSize={14}>
+                              {provinceData.map((entry, i) => (
+                                <Cell key={i} fill={entry.color} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
 
-                  {/* Province List - Clickable */}
-                  <div className="space-y-2">
-                    {ai.affected_areas.map((area, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setSelectedProvince(area)}
-                        className="w-full bg-gray-800/30 hover:bg-gray-800/50 rounded-lg p-3 text-left transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: getImpactColor(area.impact_level) }} />
-                            <div>
-                              <div className="text-sm font-medium text-white">{area.province}</div>
-                              <span
-                                className="text-[10px] px-1.5 py-0.5 rounded"
-                                style={{ backgroundColor: `${getImpactColor(area.impact_level)}20`, color: getImpactColor(area.impact_level) }}
-                              >
-                                {area.impact_level}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="text-right">
-                              <div className="text-sm font-semibold text-cyan-400">{area.water_level_cm} cm</div>
-                              <div className="text-[10px] text-gray-500">
-                                {area.districts?.length || 0} huyện
+                      {/* Province List - Clickable */}
+                      <div className="space-y-2">
+                        {ai.affected_areas.map((area, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setSelectedProvince(area)}
+                            className="w-full bg-gray-800/30 hover:bg-gray-800/50 rounded-lg p-3 text-left transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: getImpactColor(area.impact_level) }} />
+                                <div>
+                                  <div className="text-sm font-medium text-white">{area.province}</div>
+                                  <span
+                                    className="text-[10px] px-1.5 py-0.5 rounded"
+                                    style={{ backgroundColor: `${getImpactColor(area.impact_level)}20`, color: getImpactColor(area.impact_level) }}
+                                  >
+                                    {area.impact_level}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                  <div className="text-sm font-semibold text-cyan-400">{area.water_level_cm} cm</div>
+                                  <div className="text-[10px] text-gray-500">
+                                    {area.districts?.length || 0} huyện
+                                  </div>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-500" />
                               </div>
                             </div>
-                            <ChevronRight className="w-4 h-4 text-gray-500" />
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 text-center">
+                      <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <span className="text-2xl">✓</span>
+                      </div>
+                      <h3 className="text-green-400 font-medium mb-1">Không có khu vực bị ảnh hưởng</h3>
+                      <p className="text-xs text-green-300/70">
+                        Lượng mưa dự báo thấp, không có nguy cơ ngập lụt trong 14 ngày tới.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
