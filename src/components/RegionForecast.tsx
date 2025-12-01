@@ -618,7 +618,7 @@ export default function RegionForecast({ regionData, onClose }: RegionForecastPr
                 <div className="space-y-3">
                   {ai?.affected_areas && ai.affected_areas.length > 0 ? (
                     <>
-                      <p className="text-xs text-gray-500">Click vào tỉnh để xem chi tiết huyện/xã</p>
+                      <p className="text-xs text-gray-500 select-none">Click vào tỉnh để xem chi tiết huyện/xã</p>
 
                       {/* Water Level Chart */}
                       <div className="bg-gray-800/30 rounded-lg p-3">

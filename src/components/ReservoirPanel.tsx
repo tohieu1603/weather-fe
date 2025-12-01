@@ -5,6 +5,7 @@ import {
   Waves, Droplets, AlertTriangle, RefreshCw,
   ChevronDown, ChevronUp
 } from 'lucide-react'
+import api from '@/lib/api'
 
 interface ReservoirData {
   name: string
@@ -27,6 +28,7 @@ interface ReservoirResponse {
   count: number
   scrapedAt?: string
   cachedAt?: string
+  fetched_at?: string
 }
 
 const BASIN_NAMES: Record<string, string> = {
@@ -65,12 +67,14 @@ export default function ReservoirPanel() {
     try {
       if (forceRefresh) setRefreshing(true)
 
-      const method = forceRefresh ? 'POST' : 'GET'
-      const res = await fetch('/api/reservoir', { method })
+      // Use api instance which has correct base URL for production
+      const response = forceRefresh
+        ? await api.post('/api/evn-reservoirs/sync', [])
+        : await api.get('/api/evn-reservoirs/today')
 
-      if (res.ok) {
-        const data: ReservoirResponse = await res.json()
+      const data: ReservoirResponse = response.data
 
+      if (data.data && data.data.length > 0) {
         // Add basin info and water percent if not present
         const enrichedData = data.data.map(r => ({
           ...r,
@@ -79,7 +83,7 @@ export default function ReservoirPanel() {
         }))
 
         setReservoirs(enrichedData)
-        setLastUpdated(data.scrapedAt || data.cachedAt || new Date().toISOString())
+        setLastUpdated(data.scrapedAt || data.cachedAt || data.fetched_at || new Date().toISOString())
       }
     } catch (error) {
       console.error('Error fetching reservoirs:', error)
