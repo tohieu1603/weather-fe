@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { Waves, Map, Bell, X, Droplets, CloudRain, Heart } from 'lucide-react';
@@ -71,12 +71,17 @@ export default function Home() {
   const [showReservoirs, setShowReservoirs] = useState(false);
   const [showRainfallAnalysis, setShowRainfallAnalysis] = useState(false);
   const [showDonateModal, setShowDonateModal] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState<number>(96);
+  const headerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setLastUpdate(new Date());
     const setAppHeight = () => {
       const height = window.innerHeight;
       document.documentElement.style.setProperty('--app-height', `${height}px`);
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.offsetHeight);
+      }
     };
     setAppHeight();
     window.addEventListener('resize', setAppHeight);
@@ -224,6 +229,7 @@ export default function Home() {
     >
       {/* Header */}
       <header
+        ref={headerRef}
         className="absolute top-0 left-0 right-0 z-[1000] bg-gray-900/80 backdrop-blur-sm shadow-sm border-b border-gray-800/60"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 6px)' }}
       >
@@ -370,7 +376,13 @@ export default function Home() {
       )}
 
       {/* Map */}
-      <div className="absolute inset-0 w-full h-full z-0">
+      <div
+        className="absolute inset-x-0 bottom-0 w-full z-0"
+        style={{
+          top: headerHeight,
+          height: `calc(var(--app-height, 100dvh) - ${headerHeight}px)`,
+        }}
+      >
         <FloodMap onStationClick={handleStationClick} selectedStation={selectedStation} />
       </div>
     </div>

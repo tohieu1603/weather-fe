@@ -67,13 +67,22 @@ export default function ReservoirPanel() {
     try {
       if (forceRefresh) setRefreshing(true)
 
-      // Use api instance which has correct base URL for production
-      // GET / returns all reservoirs, POST /sync saves new data
-      const response = forceRefresh
-        ? await api.post('/api/evn-reservoirs/sync', [])
-        : await api.get('/api/evn-reservoirs/')
+      // Use Next API to scrape + sync when refresh, otherwise try cache then fallback
+      let response
+      if (forceRefresh) {
+        // POST /api/reservoir: clears memory cache then scrape EVN and auto-sync backend
+        response = await api.post('/api/reservoir')
+      } else {
+        try {
+          // GET /api/reservoir: uses DB cache if available, else scrape+sync
+          response = await api.get('/api/reservoir')
+        } catch (err) {
+          // Fallback: read directly from backend cache
+          response = await api.get('/api/evn-reservoirs/')
+        }
+      }
 
-      const responseData = response.data
+      const responseData = response.data || {}
       // Handle both formats: { data: [...] } or { reservoirs: [...] }
       const reservoirList = responseData.data || responseData.reservoirs || []
 
