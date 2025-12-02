@@ -10,7 +10,7 @@ export default function DonateButton3D({ onClick }: DonateButton3DProps) {
   return (
     <button
       onClick={onClick}
-      className="group relative p-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 rounded-lg shrink-0 transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-pink-500/30"
+      className="group relative flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 rounded-lg shrink-0 transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-pink-500/30"
       title="Ủng hộ dự án"
     >
       {/* Ping effect */}
@@ -18,6 +18,9 @@ export default function DonateButton3D({ onClick }: DonateButton3DProps) {
 
       {/* Icon */}
       <Heart className="relative w-4 h-4 text-white group-hover:scale-110 transition-transform duration-300" fill="currentColor" />
+
+      {/* Text */}
+      <span className="relative text-xs font-medium text-white whitespace-nowrap">Ủng hộ dự án</span>
     </button>
   )
 }

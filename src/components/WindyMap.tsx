@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Wind, CloudRain, Thermometer, Waves, Gauge } from "lucide-react";
 import Wave3DBanner from "./Wave3DBanner";
 
@@ -22,7 +22,7 @@ type PresetOption = {
   model?: string;
   level?: string;
   hourOffset?: number;
-  icon: JSX.Element;
+  icon: ReactNode;
 };
 
 const focusArea = { lat: 15.8, lon: 112, zoom: 5.4 };

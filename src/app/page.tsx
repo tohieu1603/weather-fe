@@ -334,7 +334,7 @@ export default function Home() {
       {/* Donate Modal */}
       {showDonateModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[2500] flex items-center justify-center p-4">
-          <div className="relative w-full max-w-md bg-gradient-to-b from-slate-950 via-slate-900 to-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-lg max-h-[90vh] bg-gradient-to-b from-slate-950 via-slate-900 to-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             <button
               onClick={() => setShowDonateModal(false)}
               className="absolute top-2 right-2 z-10 p-2 bg-gray-800/80 rounded-full hover:bg-gray-700 text-white border border-gray-700"
@@ -342,7 +342,7 @@ export default function Home() {
               <X className="w-4 h-4" />
             </button>
 
-            <div className="px-6 pt-6 pb-5 space-y-5">
+            <div className="px-6 pt-6 pb-5 space-y-5 overflow-y-auto">
               <div className="text-center space-y-3">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-800/80 text-xs font-medium text-pink-300 border border-gray-700">
                   <Heart className="w-4 h-4 text-pink-400" />
@@ -369,6 +369,32 @@ export default function Home() {
                   <p className="text-xs text-gray-300">7779886666 · Vietcombank</p>
                   <p className="text-[11px] text-gray-400">Quét mã VietQR để ủng hộ</p>
                 </div>
+              </div>
+
+              {/* Mục tiêu phát triển */}
+              <div className="rounded-xl bg-gradient-to-br from-blue-900/40 to-indigo-900/30 border border-blue-800/50 p-4">
+                <h3 className="text-sm font-semibold text-blue-300 mb-3 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></span>
+                  Mục tiêu phát triển hệ thống sắp tới
+                </h3>
+                <ul className="space-y-2.5 text-xs text-gray-300">
+                  <li className="flex items-start gap-2">
+                    <span className="text-pink-400 mt-0.5">♥</span>
+                    <span>Hệ thống cập nhật realtime những hoàn cảnh cần được giúp đỡ</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400 mt-0.5">🌿</span>
+                    <span>Hệ thống phân tích và đánh giá ô nhiễm theo khu vực</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-400 mt-0.5">💧</span>
+                    <span>Hệ thống phân tích và đánh giá điểm ngập cục bộ (để mọi người có kế hoạch bảo vệ tài sản)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-orange-400 mt-0.5">☀️</span>
+                    <span>Hệ thống phân tích và đánh giá nắng nóng cực đoan (dành cho người lao động ngoài trời)</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>

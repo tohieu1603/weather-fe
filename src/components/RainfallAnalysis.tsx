@@ -878,7 +878,7 @@ export default function RainfallAnalysis({ isOpen, onClose }: RainfallAnalysisPr
                           </div>
                           {/* Additional weather details */}
                           <div className="mt-2 pt-2 border-t border-gray-700/50 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-400">
-                            {day.temperature?.max !== null && day.temperature?.min !== null && (
+                            {day.temperature && day.temperature.max !== null && day.temperature.min !== null && (
                               <span className="flex items-center gap-1">
                                 <Thermometer className="w-3 h-3 text-red-400" />
                                 {day.temperature.min?.toFixed(0)}° - {day.temperature.max?.toFixed(0)}°C

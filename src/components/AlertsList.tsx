@@ -837,9 +837,7 @@ function formatDataKey(key: string): string {
     drought_level: 'Mức hạn hán',
     humidity_status: 'Tình trạng ẩm',
 
-    // Heat wave alerts
-    apparent_temperature_c: 'Nhiệt độ cảm nhận',
-    uv_index: 'Chỉ số UV',
+    // Heat wave alerts (additional fields not defined above)
     heat_type: 'Loại nắng nóng',
     heat_category: 'Phân loại',
   }
