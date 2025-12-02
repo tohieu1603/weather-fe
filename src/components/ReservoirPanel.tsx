@@ -67,20 +67,8 @@ export default function ReservoirPanel() {
     try {
       if (forceRefresh) setRefreshing(true)
 
-      // Use Next API to scrape + sync when refresh, otherwise try cache then fallback
-      let response
-      if (forceRefresh) {
-        // POST /api/reservoir: clears memory cache then scrape EVN and auto-sync backend
-        response = await api.post('/api/reservoir')
-      } else {
-        try {
-          // GET /api/reservoir: uses DB cache if available, else scrape+sync
-          response = await api.get('/api/reservoir')
-        } catch (err) {
-          // Fallback: read directly from backend cache
-          response = await api.get('/api/evn-reservoirs/')
-        }
-      }
+      // Call backend API directly (Next.js API route with puppeteer doesn't work on production)
+      const response = await api.get('/api/evn-reservoirs/')
 
       const responseData = response.data || {}
       // Handle both formats: { data: [...] } or { reservoirs: [...] }
