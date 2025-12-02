@@ -1,152 +1,19 @@
 'use client';
 
-import { useMemo, useState, useEffect, type ReactNode } from "react";
-import { Wind, CloudRain, Thermometer, Waves, Gauge } from "lucide-react";
+import { useMemo, useEffect, useState } from "react";
 import Wave3DBanner from "./Wave3DBanner";
-
-type OverlayOption = {
-  id: string;
-  title: string;
-  hint: string;
-};
-
-type ModelOption = {
-  id: string;
-  label: string;
-};
-
-type PresetOption = {
-  id: string;
-  label: string;
-  overlay: string;
-  model?: string;
-  level?: string;
-  hourOffset?: number;
-  icon: ReactNode;
-};
 
 const focusArea = { lat: 15.8, lon: 112, zoom: 5.4 };
 
-const overlays: OverlayOption[] = [
-  { id: "wind", title: "Gió", hint: "Luồng gió + jet stream" },
-  { id: "temp", title: "Nhiệt độ", hint: "Phân bố nhiệt bề mặt" },
-  { id: "rain", title: "Mưa", hint: "Mây đối lưu & mưa" },
-  { id: "clouds", title: "Mây", hint: "Mây cao + thấp" },
-  { id: "waves", title: "Sóng", hint: "Chiều cao sóng biển" },
-  { id: "pressure", title: "Áp suất", hint: "Isobar & xoáy" },
-];
-
-const models: ModelOption[] = [
-  { id: "ecmwf", label: "ECMWF" },
-  { id: "gfs", label: "GFS" },
-];
-
-const levels = [
-  { id: "surface", label: "Mặt đất" },
-  { id: "850h", label: "850 hPa" },
-  { id: "700h", label: "700 hPa" },
-];
-
-const overlayTitleById = overlays.reduce<Record<string, string>>((acc, item) => {
-  acc[item.id] = item.title;
-  return acc;
-}, {});
-
-const presets: PresetOption[] = [
-  {
-    id: "wind-surface",
-    label: "Gió bề mặt",
-    overlay: "wind",
-    model: "ecmwf",
-    level: "surface",
-    hourOffset: 0,
-    icon: <Wind className="h-5 w-5" />,
-  },
-  {
-    id: "rain-24h",
-    label: "Mưa + mây",
-    overlay: "rain",
-    model: "gfs",
-    level: "surface",
-    hourOffset: 24,
-    icon: <CloudRain className="h-5 w-5" />,
-  },
-  {
-    id: "temp-surface",
-    label: "Nhiệt độ bề mặt",
-    overlay: "temp",
-    model: "ecmwf",
-    level: "surface",
-    hourOffset: 0,
-    icon: <Thermometer className="h-5 w-5" />,
-  },
-  {
-    id: "pressure-jet",
-    label: "Áp suất & xoáy",
-    overlay: "pressure",
-    model: "ecmwf",
-    level: "850h",
-    hourOffset: 0,
-    icon: <Gauge className="h-5 w-5" />,
-  },
-  {
-    id: "waves-sea",
-    label: "Sóng biển",
-    overlay: "waves",
-    model: "gfs",
-    level: "surface",
-    hourOffset: 0,
-    icon: <Waves className="h-5 w-5" />,
-  },
-];
-
-const buildWindySrc = ({
-  overlay,
-  model,
-  level,
-  hourOffset,
-  showDetail,
-}: {
-  overlay: string;
-  model: string;
-  level: string;
-  hourOffset: number;
-  showDetail: boolean;
-}) => {
+const buildWindySrc = (overlay: string) => {
   const target = new Date();
-  target.setHours(target.getHours() + hourOffset);
   const time = `${target.toISOString().slice(0, 13)}00`;
 
-  return `https://embed.windy.com/embed2.html?lat=${focusArea.lat}&lon=${focusArea.lon}&zoom=${focusArea.zoom}&level=${level}&overlay=${overlay}&product=${model}&menu=&message=true&type=map&location=coordinates&detail=${showDetail ? 'true' : 'false'}&detailLat=${focusArea.lat}&detailLon=${focusArea.lon}&metricWind=kt&metricTemp=C&calendar=now&pressure=true&lang=vi&time=${time}`;
+  return `https://embed.windy.com/embed2.html?lat=${focusArea.lat}&lon=${focusArea.lon}&zoom=${focusArea.zoom}&level=surface&overlay=${overlay}&product=ecmwf&menu=&message=true&type=map&location=coordinates&detail=false&detailLat=${focusArea.lat}&detailLon=${focusArea.lon}&metricWind=kt&metricTemp=C&calendar=now&pressure=true&lang=vi&time=${time}`;
 };
 
-const Chip = ({
-  active,
-  label,
-  hint,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  hint?: string;
-  onClick: () => void;
-}) => (
-  <button
-    onClick={onClick}
-    className={`rounded-full px-4 py-2 text-sm transition-all ${
-      active
-        ? "bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/30"
-        : "bg-white/5 text-slate-200 hover:bg-white/10"
-    }`}
-    aria-pressed={active}
-  >
-    <span className="font-semibold">{label}</span>
-    {hint ? <span className="ml-2 text-xs text-slate-300">{hint}</span> : null}
-  </button>
-);
-
 interface WindyMapProps {
-  onStationClick?: (station: any) => void; // kept for compatibility with parent
+  onStationClick?: (station: any) => void;
   selectedStation?: any;
   hideNativeControls?: boolean;
   overlay?: string;
@@ -154,10 +21,6 @@ interface WindyMapProps {
 
 export default function WindyMap({ hideNativeControls = false, overlay: externalOverlay }: WindyMapProps) {
   const [overlay, setOverlay] = useState<string>(externalOverlay || "wind");
-  const [model, setModel] = useState<string>("ecmwf");
-  const [level, setLevel] = useState<string>("surface");
-  const [hourOffset, setHourOffset] = useState<number>(0);
-  const [showControls, setShowControls] = useState<boolean>(false);
 
   // Sync overlay from parent
   useEffect(() => {
@@ -165,26 +28,8 @@ export default function WindyMap({ hideNativeControls = false, overlay: external
       setOverlay(externalOverlay);
     }
   }, [externalOverlay]);
-  const [showInfo, setShowInfo] = useState<boolean>(false);
-  const [showDetail, setShowDetail] = useState<boolean>(false);
 
-  const windySrc = useMemo(
-    () => buildWindySrc({ overlay, model, level, hourOffset, showDetail }),
-    [overlay, model, level, hourOffset, showDetail]
-  );
-
-  const applyPreset = (preset: PresetOption) => {
-    setOverlay(preset.overlay);
-    if (preset.model) setModel(preset.model);
-    if (preset.level) setLevel(preset.level);
-    if (typeof preset.hourOffset === "number") setHourOffset(preset.hourOffset);
-  };
-
-  const isPresetActive = (preset: PresetOption) =>
-    overlay === preset.overlay &&
-    (!preset.model || model === preset.model) &&
-    (!preset.level || level === preset.level) &&
-    (preset.hourOffset === undefined || hourOffset === preset.hourOffset);
+  const windySrc = useMemo(() => buildWindySrc(overlay), [overlay]);
 
   return (
     <div
@@ -201,7 +46,6 @@ export default function WindyMap({ hideNativeControls = false, overlay: external
           title="Windy weather map"
           className="h-full w-full"
           src={windySrc}
-          frameBorder="0"
           allowFullScreen
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-950/60 via-transparent to-transparent" />
@@ -215,131 +59,16 @@ export default function WindyMap({ hideNativeControls = false, overlay: external
         />
       )}
 
-      {/* <button
-        type="button"
-        onClick={() => setShowControls((v) => !v)}
-        className="glass fixed left-3 bottom-[calc(env(safe-area-inset-bottom,0px)+16px)] z-40 rounded-full px-4 py-2 text-sm font-semibold text-slate-100 shadow-lg shadow-black/30 sm:left-5 sm:bottom-auto sm:top-[88px]"
-      >
-        {showControls ? "Ẩn điều khiển" : "Hiện điều khiển"}
-      </button> */}
-
-      {/* Banner chạy text Hoàng Sa Trường Sa với 3D weather effects */}
+      {/* Banner chạy text Hoàng Sa Trường Sa */}
       <div
         className="pointer-events-none fixed left-1/2 z-40 w-[92vw] max-w-xl -translate-x-1/2 sm:w-[80vw]"
-        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 84px)' }}
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 89px)' }}
       >
         <Wave3DBanner
           text="Hoàng Sa, Trường Sa là của Việt Nam"
           className="h-10 rounded-full ring-1 ring-cyan-400/30 shadow-lg shadow-cyan-500/30"
         />
       </div>
-
-      <div
-        className="glass fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom,0px)+68px)] z-30 flex items-center justify-center gap-2 rounded-2xl p-2 shadow-lg shadow-black/30 sm:inset-auto sm:right-4 sm:top-[180px] sm:w-[60px] sm:flex-col sm:items-center sm:gap-2 sm:bottom-auto"
-      >
-        <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:flex-col sm:items-center sm:justify-start">
-          {presets.map((preset) => {
-            const active = isPresetActive(preset);
-            const overlayTitle = overlayTitleById[preset.overlay] ?? preset.overlay;
-            return (
-              <button
-                key={preset.id}
-                type="button"
-                title={`${preset.label} · ${overlayTitle}`}
-                aria-label={`${preset.label} · ${overlayTitle}`}
-                onClick={() => applyPreset(preset)}
-                className={`flex h-12 w-12 items-center justify-center rounded-xl border transition-all sm:h-12 sm:w-12 ${
-                  active
-                    ? "border-cyan-400/70 bg-cyan-500/20 text-slate-50 shadow-md shadow-cyan-500/30"
-                    : "border-white/10 bg-white/5 text-slate-200 hover:border-white/40 hover:bg-white/10"
-                }`}
-              >
-                {preset.icon}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {showControls ? (
-        <header className="glass fixed left-4 right-4 top-[calc(env(safe-area-inset-top,0px)+10px)] z-20 flex max-h-[70vh] flex-col gap-4 overflow-y-auto rounded-3xl p-4 sm:left-5 sm:right-auto sm:max-w-3xl sm:p-5">
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-200">
-                Thời tiết trực tiếp
-              </span>
-              <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-200">
-                Biển Đông · Châu Á
-              </span>
-              <span className="text-xs text-slate-300">Map full screen</span>
-              <button
-                type="button"
-                onClick={() => setShowInfo((v) => !v)}
-                className="ml-auto rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-100 hover:bg-white/20"
-              >
-                {showInfo ? "Ẩn mô tả" : "Hiện mô tả"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowDetail((v) => !v)}
-                className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-100 hover:bg-white/20"
-              >
-                {showDetail ? "Ẩn thông tin điểm" : "Hiện thông tin điểm"}
-              </button>
-            </div>
-            {showInfo ? (
-              <>
-                <h1 className="text-balance text-2xl font-semibold leading-tight text-slate-50 sm:text-3xl">
-                  Bản đồ gió & thời tiết Next.js 16 cho Việt Nam và Biển Đông
-                </h1>
-                <p className="max-w-3xl text-sm text-slate-200">
-                  Chọn lớp phủ (gió/mưa/nhiệt độ/mây/sóng/áp suất), mô hình ECMWF/GFS, độ cao và tua thời gian 0–72h. Ảnh động hiển thị toàn màn hình, tương tự windy.com.
-                </p>
-              </>
-            ) : null}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {models.map((m) => (
-              <Chip key={m.id} active={model === m.id} label={m.label} onClick={() => setModel(m.id)} />
-            ))}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {overlays.map((item) => (
-              <Chip
-                key={item.id}
-                active={overlay === item.id}
-                label={item.title}
-                hint={item.hint}
-                onClick={() => setOverlay(item.id)}
-              />
-            ))}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {levels.map((lvl) => (
-              <Chip key={lvl.id} active={level === lvl.id} label={lvl.label} onClick={() => setLevel(lvl.id)} />
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3 text-sm text-slate-200">
-              <span className="rounded-full bg-cyan-500/20 px-3 py-1 font-semibold text-cyan-100">+{hourOffset}h</span>
-              <p className="text-slate-300">Tua thời gian dự báo (0 – 72h)</p>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={72}
-              step={3}
-              value={hourOffset}
-              onChange={(e) => setHourOffset(Number(e.target.value))}
-              className="h-2 w-full rounded-full bg-white/10 accent-cyan-400 sm:w-64"
-            />
-          </div>
-        </header>
-      ) : null}
 
       <div className="pointer-events-none fixed inset-0 z-10 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
     </div>
