@@ -32,7 +32,8 @@ export const forecastApi = {
   // Get basin forecast with optional AI analysis
   getBasinForecast: async (basinName: string, includeAi = true, asyncMode = true) => {
     const response = await api.get(`/api/forecast/basin/${basinName}`, {
-      params: { include_ai: includeAi, async_mode: asyncMode }
+      params: { include_ai: includeAi, async_mode: asyncMode },
+      timeout: 60000 // 60s for AI analysis
     });
     return response.data;
   },
