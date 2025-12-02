@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import { Waves, Map, Bell, X, Droplets, CloudRain, Heart } from 'lucide-react';
+import { Waves, Map, Bell, X, Droplets, CloudRain, Heart, Wind, Thermometer, Gauge } from 'lucide-react';
 import StationDetails from '@/components/StationDetails';
 import RegionForecast from '@/components/RegionForecast';
 import FloodZones from '@/components/FloodZones';
@@ -73,7 +73,17 @@ export default function Home() {
   const [showRainfallAnalysis, setShowRainfallAnalysis] = useState(false);
   const [showDonateModal, setShowDonateModal] = useState(false);
   const [headerHeight, setHeaderHeight] = useState<number>(96);
+  const [mapOverlay, setMapOverlay] = useState<string>('wind');
   const headerRef = useRef<HTMLDivElement | null>(null);
+
+  const isMapOverlayOpen =
+    showFloodZones ||
+    showDamAlerts ||
+    showReservoirs ||
+    showRainfallAnalysis ||
+    showDonateModal ||
+    !!selectedStation ||
+    !!regionData;
 
   useEffect(() => {
     setLastUpdate(new Date());
@@ -273,6 +283,45 @@ export default function Home() {
               </select>
             </div>
 
+            {/* Map overlay controls */}
+            <div className="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1">
+              <button
+                onClick={() => setMapOverlay('wind')}
+                className={`p-1.5 rounded transition-colors ${mapOverlay === 'wind' ? 'bg-cyan-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                title="Gió"
+              >
+                <Wind className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setMapOverlay('rain')}
+                className={`p-1.5 rounded transition-colors ${mapOverlay === 'rain' ? 'bg-cyan-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                title="Mưa"
+              >
+                <CloudRain className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setMapOverlay('temp')}
+                className={`p-1.5 rounded transition-colors ${mapOverlay === 'temp' ? 'bg-cyan-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                title="Nhiệt độ"
+              >
+                <Thermometer className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setMapOverlay('waves')}
+                className={`p-1.5 rounded transition-colors ${mapOverlay === 'waves' ? 'bg-cyan-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                title="Sóng biển"
+              >
+                <Waves className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setMapOverlay('pressure')}
+                className={`p-1.5 rounded transition-colors ${mapOverlay === 'pressure' ? 'bg-cyan-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                title="Áp suất"
+              >
+                <Gauge className="w-4 h-4" />
+              </button>
+            </div>
+
             <div className="flex items-center gap-2 overflow-hidden pr-2 py-1">
               <button onClick={() => setShowRainfallAnalysis(true)} className="p-2 bg-blue-600 hover:bg-blue-700 rounded shrink-0" title="Phân tích lượng mưa">
                 <CloudRain className="w-4 h-4 text-white" />
@@ -334,7 +383,7 @@ export default function Home() {
       {/* Donate Modal */}
       {showDonateModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[2500] flex items-center justify-center p-4">
-          <div className="relative w-full max-w-lg max-h-[90vh] bg-gradient-to-b from-slate-950 via-slate-900 to-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-gradient-to-b from-slate-950 via-slate-900 to-gray-900 border border-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             <button
               onClick={() => setShowDonateModal(false)}
               className="absolute top-2 right-2 z-10 p-2 bg-gray-800/80 rounded-full hover:bg-gray-700 text-white border border-gray-700"
@@ -342,59 +391,65 @@ export default function Home() {
               <X className="w-4 h-4" />
             </button>
 
-            <div className="px-6 pt-6 pb-5 space-y-5 overflow-y-auto">
-              <div className="text-center space-y-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-800/80 text-xs font-medium text-pink-300 border border-gray-700">
-                  <Heart className="w-4 h-4 text-pink-400" />
-                  <span>Ủng hộ dự án</span>
-                </div>
-                <p className="text-sm text-gray-200 leading-relaxed">
-                  “Mỗi 1 sự động viên từ bạn là nguồn cảm hứng để đội ngũ phát triển thật nhiều sản phẩm, có năng lượng để nghiên cứu và phát triển thêm những dự án xã hội tốt hơn.”
-                </p>
-              </div>
+            <div className="px-6 pt-6 pb-6 overflow-y-auto">
+              <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-6">
+                <div className="flex-1 space-y-4">
+                  <div className="text-center md:text-left space-y-3">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-800/80 text-xs font-medium text-pink-300 border border-gray-700">
+                      <Heart className="w-4 h-4 text-pink-400" />
+                      <span>Ủng hộ dự án</span>
+                    </div>
+                    <p className="text-sm text-gray-200 leading-relaxed">
+                      “Mỗi 1 sự động viên từ bạn là nguồn cảm hứng để đội ngũ phát triển thật nhiều sản phẩm, có năng lượng để nghiên cứu và phát triển thêm những dự án xã hội tốt hơn.”
+                    </p>
+                  </div>
 
-              <div className="rounded-2xl bg-gray-800/60 border border-gray-700 p-4 shadow-inner">
-                <div className="overflow-hidden rounded-xl bg-white/90">
-                  <Image
-                    src="/donation-qr.png"
-                    alt="QR ủng hộ LE TIEN HUNG - 7779886666"
-                    width={540}
-                    height={540}
-                    className="w-full h-full object-contain"
-                    priority
-                  />
+                  {/* Mục tiêu phát triển */}
+                  <div className="rounded-xl bg-gradient-to-br from-blue-900/40 to-indigo-900/30 border border-blue-800/50 p-4">
+                    <h3 className="text-sm font-semibold text-blue-300 mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></span>
+                      Mục tiêu phát triển hệ thống sắp tới
+                    </h3>
+                    <ul className="space-y-2.5 text-xs text-gray-300">
+                      <li className="flex items-start gap-2">
+                        <span className="text-pink-400 mt-0.5">♥</span>
+                        <span>Hệ thống cập nhật realtime những hoàn cảnh cần được giúp đỡ</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-400 mt-0.5">🌿</span>
+                        <span>Hệ thống phân tích và đánh giá ô nhiễm theo khu vực</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-400 mt-0.5">💧</span>
+                        <span>Hệ thống phân tích và đánh giá điểm ngập cục bộ (để mọi người có kế hoạch bảo vệ tài sản)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-orange-400 mt-0.5">☀️</span>
+                        <span>Hệ thống phân tích và đánh giá nắng nóng cực đoan (dành cho người lao động ngoài trời)</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
-                <div className="text-center mt-4 space-y-1">
-                  <p className="text-sm font-semibold text-white tracking-wide">LE TIEN HUNG</p>
-                  <p className="text-xs text-gray-300">7779886666 · Vietcombank</p>
-                  <p className="text-[11px] text-gray-400">Quét mã VietQR để ủng hộ</p>
-                </div>
-              </div>
 
-              {/* Mục tiêu phát triển */}
-              <div className="rounded-xl bg-gradient-to-br from-blue-900/40 to-indigo-900/30 border border-blue-800/50 p-4">
-                <h3 className="text-sm font-semibold text-blue-300 mb-3 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse"></span>
-                  Mục tiêu phát triển hệ thống sắp tới
-                </h3>
-                <ul className="space-y-2.5 text-xs text-gray-300">
-                  <li className="flex items-start gap-2">
-                    <span className="text-pink-400 mt-0.5">♥</span>
-                    <span>Hệ thống cập nhật realtime những hoàn cảnh cần được giúp đỡ</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-400 mt-0.5">🌿</span>
-                    <span>Hệ thống phân tích và đánh giá ô nhiễm theo khu vực</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-400 mt-0.5">💧</span>
-                    <span>Hệ thống phân tích và đánh giá điểm ngập cục bộ (để mọi người có kế hoạch bảo vệ tài sản)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-orange-400 mt-0.5">☀️</span>
-                    <span>Hệ thống phân tích và đánh giá nắng nóng cực đoan (dành cho người lao động ngoài trời)</span>
-                  </li>
-                </ul>
+                <div className="w-full md:max-w-sm lg:max-w-md">
+                  <div className="rounded-2xl bg-gray-800/60 border border-gray-700 p-4 shadow-inner">
+                    <div className="overflow-hidden rounded-xl bg-white/90">
+                      <Image
+                        src="/donation-qr.png"
+                        alt="QR ủng hộ LE TIEN HUNG - 7779886666"
+                        width={540}
+                        height={540}
+                        className="w-full h-full object-contain"
+                        priority
+                      />
+                    </div>
+                    <div className="text-center mt-4 space-y-1">
+                      <p className="text-sm font-semibold text-white tracking-wide">LE TIEN HUNG</p>
+                      <p className="text-xs text-gray-300">7779886666 · Vietcombank</p>
+                      <p className="text-[11px] text-gray-400">Quét mã VietQR để ủng hộ</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -409,7 +464,16 @@ export default function Home() {
           height: `calc(var(--app-height, 100dvh) - ${headerHeight}px)`,
         }}
       >
-        <FloodMap onStationClick={handleStationClick} selectedStation={selectedStation} />
+        <FloodMap
+          onStationClick={handleStationClick}
+          selectedStation={selectedStation}
+          hideNativeControls={isMapOverlayOpen}
+          overlay={mapOverlay}
+        />
+        {/* Overlay to hide Windy controls when donate modal is open */}
+        {showDonateModal && (
+          <div className="absolute inset-0 bg-black/60 z-[2400]" />
+        )}
       </div>
     </div>
   );

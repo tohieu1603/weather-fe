@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, useEffect, type ReactNode } from "react";
 import { Wind, CloudRain, Thermometer, Waves, Gauge } from "lucide-react";
 import Wave3DBanner from "./Wave3DBanner";
 
@@ -148,14 +148,23 @@ const Chip = ({
 interface WindyMapProps {
   onStationClick?: (station: any) => void; // kept for compatibility with parent
   selectedStation?: any;
+  hideNativeControls?: boolean;
+  overlay?: string;
 }
 
-export default function WindyMap(_props: WindyMapProps) {
-  const [overlay, setOverlay] = useState<string>("wind");
+export default function WindyMap({ hideNativeControls = false, overlay: externalOverlay }: WindyMapProps) {
+  const [overlay, setOverlay] = useState<string>(externalOverlay || "wind");
   const [model, setModel] = useState<string>("ecmwf");
   const [level, setLevel] = useState<string>("surface");
   const [hourOffset, setHourOffset] = useState<number>(0);
   const [showControls, setShowControls] = useState<boolean>(false);
+
+  // Sync overlay from parent
+  useEffect(() => {
+    if (externalOverlay && externalOverlay !== overlay) {
+      setOverlay(externalOverlay);
+    }
+  }, [externalOverlay]);
   const [showInfo, setShowInfo] = useState<boolean>(false);
   const [showDetail, setShowDetail] = useState<boolean>(false);
 
@@ -197,6 +206,14 @@ export default function WindyMap(_props: WindyMapProps) {
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-950/60 via-transparent to-transparent" />
       </div>
+
+      {/* Overlay to block Windy native controls when modal is open */}
+      {hideNativeControls && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-20 pointer-events-auto"
+        />
+      )}
 
       {/* <button
         type="button"
