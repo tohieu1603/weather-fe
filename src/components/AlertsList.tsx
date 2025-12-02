@@ -72,11 +72,18 @@ const CategoryIcon = ({ category, className = "w-4 h-4" }: { category: string; c
     'Lũ lụt': <Waves className={className} />,
     'Mưa lớn': <CloudRain className={className} />,
     'Nắng nóng': <Sun className={className} />,
+    'Nắng nóng gay gắt': <Sun className={className} />,
+    'Nắng nóng đặc biệt gay gắt': <Sun className={className} />,
+    'Nắng nóng cục bộ': <Sun className={className} />,
     'Hạn hán': <Thermometer className={className} />,
     'Xâm nhập mặn': <Droplets className={className} />,
     'Xả lũ': <Cylinder className={className} />,
+    'Xả lũ hồ chứa': <Cylinder className={className} />,
     'Gió mạnh': <Wind className={className} />,
     'Tia UV cao': <Radiation className={className} />,
+    'Rét đậm': <Thermometer className={className} />,
+    'Rét hại': <Thermometer className={className} />,
+    'Rét': <Thermometer className={className} />,
     'Phân tích AI': <Brain className={className} />,
   }
   return <>{icons[category] || <AlertTriangle className={className} />}</>
@@ -418,10 +425,40 @@ export default function AlertsList() {
                           {alert.data.max_rainfall_mm}mm
                         </span>
                       )}
+                      {alert.data.rainfall_mm > 0 && !alert.data.max_rainfall_mm && (
+                        <span className="flex items-center gap-1">
+                          <CloudRain className="w-3 h-3 text-blue-500" />
+                          {alert.data.rainfall_mm}mm
+                        </span>
+                      )}
                       {alert.data.discharging_count > 0 && (
                         <span className="flex items-center gap-1">
                           <Waves className="w-3 h-3 text-cyan-500" />
                           {alert.data.discharging_count} hồ xả
+                        </span>
+                      )}
+                      {alert.data.total_discharge_m3s > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Cylinder className="w-3 h-3 text-purple-500" />
+                          {alert.data.total_discharge_m3s.toLocaleString()} m³/s
+                        </span>
+                      )}
+                      {alert.data.max_temperature_c > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Sun className="w-3 h-3 text-orange-500" />
+                          {alert.data.max_temperature_c}°C
+                        </span>
+                      )}
+                      {alert.data.min_temperature_c !== undefined && alert.data.min_temperature_c <= 15 && (
+                        <span className="flex items-center gap-1">
+                          <Thermometer className="w-3 h-3 text-blue-600" />
+                          {alert.data.min_temperature_c}°C
+                        </span>
+                      )}
+                      {alert.data.wind_speed_kmh > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Wind className="w-3 h-3 text-cyan-600" />
+                          {alert.data.wind_speed_kmh}km/h
                         </span>
                       )}
                       <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -499,15 +536,157 @@ export default function AlertsList() {
                 </div>
               )}
 
-              {/* Data metrics */}
+              {/* Data metrics - Enhanced */}
               {selectedAlert.data && Object.keys(selectedAlert.data).length > 0 && (
                 <div>
                   <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">Thông số chi tiết</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(selectedAlert.data).map(([key, value]) => (
-                      <div key={key} className="bg-gray-50 p-2.5 rounded">
-                        <p className="text-xs text-gray-500">{formatDataKey(key)}</p>
-                        <p className="text-sm font-medium text-gray-900">{formatDataValue(key, value)}</p>
+
+                  {/* Primary metrics - large cards */}
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    {selectedAlert.data.rainfall_mm !== undefined && (
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <CloudRain className="w-4 h-4 text-blue-600" />
+                          <p className="text-xs text-blue-600 font-medium">Lượng mưa</p>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-700">{selectedAlert.data.rainfall_mm} <span className="text-sm font-normal">mm</span></p>
+                        <p className="text-xs text-blue-500 mt-1">
+                          {selectedAlert.data.rainfall_mm >= 100 ? 'Mưa rất to' :
+                           selectedAlert.data.rainfall_mm >= 50 ? 'Mưa to' :
+                           selectedAlert.data.rainfall_mm >= 25 ? 'Mưa vừa' : 'Mưa nhỏ'}
+                        </p>
+                      </div>
+                    )}
+                    {selectedAlert.data.max_rainfall_mm !== undefined && (
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <CloudRain className="w-4 h-4 text-blue-600" />
+                          <p className="text-xs text-blue-600 font-medium">Lượng mưa tối đa</p>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-700">{selectedAlert.data.max_rainfall_mm} <span className="text-sm font-normal">mm</span></p>
+                        <p className="text-xs text-blue-500 mt-1">
+                          {selectedAlert.data.max_rainfall_mm >= 100 ? 'Mưa rất to' :
+                           selectedAlert.data.max_rainfall_mm >= 50 ? 'Mưa to' :
+                           selectedAlert.data.max_rainfall_mm >= 25 ? 'Mưa vừa' : 'Mưa nhỏ'}
+                        </p>
+                      </div>
+                    )}
+                    {selectedAlert.data.wind_speed_kmh !== undefined && (
+                      <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 p-3 rounded-lg border border-cyan-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Wind className="w-4 h-4 text-cyan-600" />
+                          <p className="text-xs text-cyan-600 font-medium">Tốc độ gió</p>
+                        </div>
+                        <p className="text-2xl font-bold text-cyan-700">{selectedAlert.data.wind_speed_kmh} <span className="text-sm font-normal">km/h</span></p>
+                        <p className="text-xs text-cyan-500 mt-1">
+                          {selectedAlert.data.wind_speed_kmh >= 90 ? 'Gió bão' :
+                           selectedAlert.data.wind_speed_kmh >= 62 ? 'Gió mạnh' :
+                           selectedAlert.data.wind_speed_kmh >= 40 ? 'Gió vừa' : 'Gió nhẹ'}
+                        </p>
+                      </div>
+                    )}
+                    {selectedAlert.data.max_temperature_c !== undefined && (
+                      <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Thermometer className="w-4 h-4 text-orange-600" />
+                          <p className="text-xs text-orange-600 font-medium">Nhiệt độ cao nhất</p>
+                        </div>
+                        <p className="text-2xl font-bold text-orange-700">{selectedAlert.data.max_temperature_c}<span className="text-sm font-normal">°C</span></p>
+                        <p className="text-xs text-orange-500 mt-1">
+                          {selectedAlert.data.max_temperature_c >= 39 ? 'Nắng nóng gay gắt' :
+                           selectedAlert.data.max_temperature_c >= 37 ? 'Nắng nóng' : 'Bình thường'}
+                        </p>
+                      </div>
+                    )}
+                    {selectedAlert.data.discharge_m3s !== undefined && (
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Waves className="w-4 h-4 text-purple-600" />
+                          <p className="text-xs text-purple-600 font-medium">Lưu lượng xả</p>
+                        </div>
+                        <p className="text-2xl font-bold text-purple-700">{selectedAlert.data.discharge_m3s.toLocaleString()} <span className="text-sm font-normal">m³/s</span></p>
+                        <p className="text-xs text-purple-500 mt-1">
+                          {selectedAlert.data.discharge_m3s >= 2000 ? 'Xả rất lớn' :
+                           selectedAlert.data.discharge_m3s >= 1000 ? 'Xả lớn' : 'Xả trung bình'}
+                        </p>
+                      </div>
+                    )}
+                    {selectedAlert.data.total_discharge_m3s !== undefined && (
+                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Waves className="w-4 h-4 text-purple-600" />
+                          <p className="text-xs text-purple-600 font-medium">Tổng lưu lượng xả</p>
+                        </div>
+                        <p className="text-2xl font-bold text-purple-700">{selectedAlert.data.total_discharge_m3s?.toLocaleString()} <span className="text-sm font-normal">m³/s</span></p>
+                        <p className="text-xs text-purple-500 mt-1">
+                          {selectedAlert.data.total_discharge_m3s >= 2000 ? 'Xả rất lớn' :
+                           selectedAlert.data.total_discharge_m3s >= 1000 ? 'Xả lớn' : 'Xả trung bình'}
+                        </p>
+                      </div>
+                    )}
+                    {selectedAlert.data.min_temperature_c !== undefined && (
+                      <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-3 rounded-lg border border-blue-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Thermometer className="w-4 h-4 text-blue-600" />
+                          <p className="text-xs text-blue-600 font-medium">Nhiệt độ thấp nhất</p>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-700">{selectedAlert.data.min_temperature_c}<span className="text-sm font-normal">°C</span></p>
+                        <p className="text-xs text-blue-500 mt-1">
+                          {selectedAlert.data.min_temperature_c <= 5 ? 'Rét hại nghiêm trọng' :
+                           selectedAlert.data.min_temperature_c <= 10 ? 'Rét hại' :
+                           selectedAlert.data.min_temperature_c <= 13 ? 'Rét đậm' : 'Trời rét'}
+                        </p>
+                      </div>
+                    )}
+                    {selectedAlert.data.evapotranspiration_mm !== undefined && (
+                      <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-3 rounded-lg border border-amber-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Sun className="w-4 h-4 text-amber-600" />
+                          <p className="text-xs text-amber-600 font-medium">Lượng bốc hơi</p>
+                        </div>
+                        <p className="text-2xl font-bold text-amber-700">{selectedAlert.data.evapotranspiration_mm} <span className="text-sm font-normal">mm/ngày</span></p>
+                        <p className="text-xs text-amber-500 mt-1">
+                          {selectedAlert.data.evapotranspiration_mm >= 7 ? 'Bốc hơi rất cao' : 'Bốc hơi cao'}
+                        </p>
+                      </div>
+                    )}
+                    {selectedAlert.data.apparent_temperature_c !== undefined && (
+                      <div className="bg-gradient-to-br from-red-50 to-orange-100 p-3 rounded-lg border border-orange-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Thermometer className="w-4 h-4 text-red-600" />
+                          <p className="text-xs text-red-600 font-medium">Nhiệt độ cảm nhận</p>
+                        </div>
+                        <p className="text-2xl font-bold text-red-700">{selectedAlert.data.apparent_temperature_c}<span className="text-sm font-normal">°C</span></p>
+                        <p className="text-xs text-red-500 mt-1">
+                          {selectedAlert.data.apparent_temperature_c >= 42 ? 'Nguy hiểm, say nắng' :
+                           selectedAlert.data.apparent_temperature_c >= 38 ? 'Rất nóng, mệt mỏi' : 'Nóng bức'}
+                        </p>
+                      </div>
+                    )}
+                    {selectedAlert.data.uv_index !== undefined && (
+                      <div className="bg-gradient-to-br from-violet-50 to-purple-100 p-3 rounded-lg border border-violet-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Radiation className="w-4 h-4 text-violet-600" />
+                          <p className="text-xs text-violet-600 font-medium">Chỉ số UV</p>
+                        </div>
+                        <p className="text-2xl font-bold text-violet-700">{selectedAlert.data.uv_index}</p>
+                        <p className="text-xs text-violet-500 mt-1">
+                          {selectedAlert.data.uv_index >= 11 ? 'Cực kỳ cao' :
+                           selectedAlert.data.uv_index >= 8 ? 'Rất cao' :
+                           selectedAlert.data.uv_index >= 6 ? 'Cao' : 'Trung bình'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Secondary metrics - smaller grid */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {Object.entries(selectedAlert.data)
+                      .filter(([key]) => !['rainfall_mm', 'max_rainfall_mm', 'wind_speed_kmh', 'max_temperature_c', 'discharge_m3s', 'total_discharge_m3s', 'min_temperature_c', 'evapotranspiration_mm', 'apparent_temperature_c', 'uv_index'].includes(key))
+                      .map(([key, value]) => (
+                      <div key={key} className="bg-gray-50 p-2.5 rounded border border-gray-100">
+                        <p className="text-xs text-gray-500 truncate">{formatDataKey(key)}</p>
+                        <p className="text-sm font-semibold text-gray-900">{formatDataValue(key, value)}</p>
                       </div>
                     ))}
                   </div>
@@ -568,19 +747,55 @@ export default function AlertsList() {
 
 function formatDataKey(key: string): string {
   const labels: Record<string, string> = {
+    // Mưa
     rainfall_daily_mm: 'Lượng mưa/ngày',
     rainfall_accumulated_mm: 'Tích lũy 3 ngày',
     rainfall_mm: 'Lượng mưa',
+    rain_intensity: 'Cường độ mưa',
+    precipitation_hours: 'Số giờ mưa',
+    precipitation_probability: 'Xác suất mưa',
+    flood_risk_percent: 'Nguy cơ ngập',
+    humidity_note: 'Độ ẩm',
+
+    // Nhiệt độ
+    max_temperature_c: 'Nhiệt độ cao nhất',
+    min_temperature_c: 'Nhiệt độ thấp nhất',
+    temp_max_c: 'Nhiệt độ cao nhất',
+    temp_min_c: 'Nhiệt độ thấp nhất',
+    apparent_temperature_c: 'Nhiệt độ cảm nhận',
+    heat_level: 'Mức nắng nóng',
+    dehydration_risk: 'Nguy cơ mất nước',
+    sunshine_hours: 'Số giờ nắng',
+
+    // Gió
+    wind_speed_kmh: 'Tốc độ gió',
+    wind_gust_kmh: 'Gió giật',
+    wind_level: 'Cấp gió',
+    beaufort_scale: 'Thang Beaufort',
+    wind_direction_deg: 'Hướng gió (độ)',
+    wind_direction_text: 'Hướng gió',
+    danger_level: 'Mức nguy hiểm',
+
+    // UV
+    uv_index: 'Chỉ số UV',
+    uv_level: 'Mức UV',
+
+    // Thời tiết chung
+    weather_code: 'Mã thời tiết',
+    weather_description: 'Mô tả thời tiết',
     probability: 'Xác suất',
     risk_level: 'Mức rủi ro',
-    max_temperature_c: 'Nhiệt độ cao nhất',
-    uv_index: 'Chỉ số UV',
+
+    // Nước/Lũ
     humidity_percent: 'Độ ẩm',
     days_without_rain: 'Số ngày không mưa',
     water_level_percent: 'Mực nước',
     salinity_intrusion_km: 'Xâm nhập mặn',
     salinity_level_ppt: 'Độ mặn',
     affected_area_ha: 'Diện tích ảnh hưởng',
+    river_discharge_m3s: 'Lưu lượng sông',
+
+    // Hồ chứa/Đập
     dam_name: 'Tên đập',
     river: 'Sông',
     discharge_m3s: 'Lưu lượng xả',
@@ -600,6 +815,33 @@ function formatDataKey(key: string): string {
     critical_count: 'Hồ nguy hiểm',
     high_water_count: 'Hồ mực nước cao',
     affected_provinces: 'Tỉnh bị ảnh hưởng',
+
+    // EVN Reservoir discharge alerts
+    reservoir_name: 'Tên hồ chứa',
+    basin: 'Lưu vực',
+    normal_level_m: 'Mực nước dâng BT',
+    dead_level_m: 'Mực nước chết',
+    water_percent: 'Tỷ lệ mực nước',
+    inflow_m3s: 'Lưu lượng đến',
+    total_discharge_m3s: 'Tổng lưu lượng xả',
+    turbine_discharge_m3s: 'Xả qua turbine',
+    spillway_discharge_m3s: 'Xả qua tràn',
+    spillway_gates_deep: 'Số cửa xả sâu',
+    spillway_gates_surface: 'Số cửa xả mặt',
+    alert_reason: 'Lý do cảnh báo',
+
+    // Cold wave / Drought alerts
+    apparent_min_temperature_c: 'Nhiệt độ cảm nhận thấp nhất',
+    cold_level: 'Mức độ rét',
+    evapotranspiration_mm: 'Lượng bốc hơi',
+    drought_level: 'Mức hạn hán',
+    humidity_status: 'Tình trạng ẩm',
+
+    // Heat wave alerts
+    apparent_temperature_c: 'Nhiệt độ cảm nhận',
+    uv_index: 'Chỉ số UV',
+    heat_type: 'Loại nắng nóng',
+    heat_category: 'Phân loại',
   }
   return labels[key] || key.replace(/_/g, ' ')
 }
