@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin', 'vietnamese'] })
 
 export const metadata: Metadata = {
   title: 'Hệ Thống Dự Báo Lũ Lụt Việt Nam',
-  description: 'Dự báo thiên tai lũ lụt cho các lưu vực sông chính tại Việt Nam',
+  description: 'Được phát triển bới team Operis.vn',
 }
 
 export default function RootLayout({

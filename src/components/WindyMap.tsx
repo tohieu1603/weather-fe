@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Wind, CloudRain, Thermometer, Waves, Gauge } from "lucide-react";
+import Wave3DBanner from "./Wave3DBanner";
 
 type OverlayOption = {
   id: string;
@@ -178,7 +179,7 @@ export default function WindyMap(_props: WindyMapProps) {
 
   return (
     <div
-      className="relative overflow-hidden bg-slate-950"
+      className="relative overflow-hidden bg-slate-950 mt-2"
       style={{ minHeight: 'var(--app-height, 100dvh)' }}
     >
       <div className="pointer-events-none absolute inset-0">
@@ -197,29 +198,23 @@ export default function WindyMap(_props: WindyMapProps) {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-950/60 via-transparent to-transparent" />
       </div>
 
-      <button
+      {/* <button
         type="button"
         onClick={() => setShowControls((v) => !v)}
         className="glass fixed left-3 bottom-[calc(env(safe-area-inset-bottom,0px)+16px)] z-40 rounded-full px-4 py-2 text-sm font-semibold text-slate-100 shadow-lg shadow-black/30 sm:left-5 sm:bottom-auto sm:top-[88px]"
       >
         {showControls ? "Ẩn điều khiển" : "Hiện điều khiển"}
-      </button>
+      </button> */}
 
-      {/* Banner chạy text Hoàng Sa Trường Sa - đặt lên che khu vực logo Windy */}
+      {/* Banner chạy text Hoàng Sa Trường Sa với 3D weather effects */}
       <div
         className="pointer-events-none fixed left-1/2 z-40 w-[92vw] max-w-xl -translate-x-1/2 sm:w-[80vw]"
-        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 64px)' }}
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 84px)' }}
       >
-        <div className="marquee-track rounded-full bg-slate-950/90 px-4 py-2 text-center text-sm font-semibold text-slate-100 ring-1 ring-white/10 backdrop-blur">
-          <div className="marquee-rail">
-            <span className="marquee-item">
-              Hoàng Sa, Trường Sa là của Việt Nam · Hoàng Sa, Trường Sa là của Việt Nam · Hoàng Sa, Trường Sa là của Việt Nam
-            </span>
-            <span className="marquee-item" aria-hidden="true">
-              Hoàng Sa, Trường Sa là của Việt Nam · Hoàng Sa, Trường Sa là của Việt Nam · Hoàng Sa, Trường Sa là của Việt Nam
-            </span>
-          </div>
-        </div>
+        <Wave3DBanner
+          text="Hoàng Sa, Trường Sa là của Việt Nam"
+          className="h-10 rounded-full ring-1 ring-cyan-400/30 shadow-lg shadow-cyan-500/30"
+        />
       </div>
 
       <div

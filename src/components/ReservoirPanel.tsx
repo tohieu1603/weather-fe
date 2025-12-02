@@ -185,7 +185,7 @@ export default function ReservoirPanel() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Waves className="w-5 h-5 text-blue-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Hồ chứa thủy điện EVN</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Tổng hợp các hồ chứa thủy điện tại Việt Nam</h2>
           </div>
           <button
             onClick={() => fetchReservoirs(true)}
@@ -339,65 +339,65 @@ export default function ReservoirPanel() {
 
                   {/* Expanded details */}
                   {isExpanded && (
-                    <div className="px-3 pb-3 pt-1 border-t border-gray-100">
+                    <div className="px-3 pb-3 pt-1 border-t border-gray-100 bg-white">
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         {/* Water levels */}
-                        <div className="bg-gray-50 p-2 rounded">
-                          <p className="text-gray-500 mb-1">Mực nước</p>
+                        <div className="bg-blue-50 p-2 rounded border border-blue-200 shadow-sm">
+                          <p className="text-blue-800 font-semibold mb-1">Mực nước</p>
                           <div className="space-y-1">
                             <div className="flex justify-between">
-                              <span>Hiện tại (Htl):</span>
-                              <span className="font-medium">{reservoir.htl?.toFixed(2) || '-'} m</span>
+                              <span className="text-gray-800">Hiện tại (Htl):</span>
+                              <span className="font-bold text-blue-900">{reservoir.htl?.toFixed(2) || '-'} m</span>
                             </div>
                             <div className="flex justify-between">
-                              <span>Dâng BT (Hdbt):</span>
-                              <span className="font-medium">{reservoir.hdbt?.toFixed(2) || '-'} m</span>
+                              <span className="text-gray-800">Dâng BT (Hdbt):</span>
+                              <span className="font-bold text-blue-900">{reservoir.hdbt?.toFixed(2) || '-'} m</span>
                             </div>
                             <div className="flex justify-between">
-                              <span>Mực chết (Hc):</span>
-                              <span className="font-medium">{reservoir.hc?.toFixed(2) || '-'} m</span>
+                              <span className="text-gray-800">Mực chết (Hc):</span>
+                              <span className="font-bold text-blue-900">{reservoir.hc?.toFixed(2) || '-'} m</span>
                             </div>
                           </div>
                         </div>
 
                         {/* Flow rates */}
-                        <div className="bg-gray-50 p-2 rounded">
-                          <p className="text-gray-500 mb-1">Lưu lượng</p>
+                        <div className="bg-cyan-50 p-2 rounded border border-cyan-200 shadow-sm">
+                          <p className="text-cyan-800 font-semibold mb-1">Lưu lượng</p>
                           <div className="space-y-1">
                             <div className="flex justify-between">
-                              <span>Đến hồ (Qve):</span>
-                              <span className="font-medium">{reservoir.qve?.toFixed(1) || '-'} m³/s</span>
+                              <span className="text-gray-800">Đến hồ (Qve):</span>
+                              <span className="font-bold text-cyan-900">{reservoir.qve?.toFixed(1) || '-'} m³/s</span>
                             </div>
                             <div className="flex justify-between">
-                              <span>Tổng xả (ΣQx):</span>
-                              <span className="font-medium text-blue-600">{reservoir.totalQx?.toFixed(1) || '-'} m³/s</span>
+                              <span className="text-gray-800">Tổng xả (ΣQx):</span>
+                              <span className="font-bold text-cyan-900">{reservoir.totalQx?.toFixed(1) || '-'} m³/s</span>
                             </div>
                             <div className="flex justify-between">
-                              <span>Xả turbine:</span>
-                              <span className="font-medium">{reservoir.qxt?.toFixed(1) || '-'} m³/s</span>
+                              <span className="text-gray-800">Xả turbine:</span>
+                              <span className="font-bold text-cyan-900">{reservoir.qxt?.toFixed(1) || '-'} m³/s</span>
                             </div>
                           </div>
                         </div>
 
                         {/* Spillway info */}
                         {(reservoir.ncxs || reservoir.ncxm || reservoir.qxm) && (
-                          <div className="col-span-2 bg-red-50 p-2 rounded">
-                            <p className="text-red-600 font-medium mb-1 flex items-center gap-1">
+                          <div className="col-span-2 bg-red-100 p-2 rounded border border-red-200">
+                            <p className="text-red-700 font-semibold mb-1 flex items-center gap-1">
                               <AlertTriangle className="w-3 h-3" />
                               Thông tin xả
                             </p>
-                            <div className="grid grid-cols-3 gap-2 text-gray-700">
+                            <div className="grid grid-cols-3 gap-2">
                               <div>
-                                <span className="text-gray-500">Xả mặt:</span>
-                                <span className="ml-1 font-medium">{reservoir.qxm?.toFixed(1) || 0} m³/s</span>
+                                <span className="text-red-600">Xả mặt:</span>
+                                <span className="ml-1 font-semibold text-red-800">{reservoir.qxm?.toFixed(1) || 0} m³/s</span>
                               </div>
                               <div>
-                                <span className="text-gray-500">Cửa xả sâu:</span>
-                                <span className="ml-1 font-medium">{reservoir.ncxs || 0}</span>
+                                <span className="text-red-600">Cửa xả sâu:</span>
+                                <span className="ml-1 font-semibold text-red-800">{reservoir.ncxs || 0}</span>
                               </div>
                               <div>
-                                <span className="text-gray-500">Cửa xả mặt:</span>
-                                <span className="ml-1 font-medium">{reservoir.ncxm || 0}</span>
+                                <span className="text-red-600">Cửa xả mặt:</span>
+                                <span className="ml-1 font-semibold text-red-800">{reservoir.ncxm || 0}</span>
                               </div>
                             </div>
                           </div>
@@ -414,7 +414,7 @@ export default function ReservoirPanel() {
 
       {/* Footer */}
       <div className="p-2 border-t bg-gray-50 text-xs text-gray-500 text-center">
-        Nguồn: EVN • Cập nhật: {lastUpdated ? new Date(lastUpdated).toLocaleString('vi-VN') : '-'}
+        • Cập nhật: {lastUpdated ? new Date(lastUpdated).toLocaleString('vi-VN') : '-'}
       </div>
     </div>
   )

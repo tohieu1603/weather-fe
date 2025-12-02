@@ -10,6 +10,7 @@ import FloodZones from '@/components/FloodZones';
 import AlertsList from '@/components/AlertsList';
 import ReservoirPanel from '@/components/ReservoirPanel';
 import RainfallAnalysis from '@/components/RainfallAnalysis';
+import DonateButton3D from '@/components/DonateButton3D';
 import { forecastApi } from '@/lib/api';
 
 // Option 1: Original FloodMap with stations (BACKUP: FloodMap.tsx.backup)
@@ -235,10 +236,16 @@ export default function Home() {
       >
         <div className="px-4 pb-3 pt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <Waves className="w-6 h-6 text-blue-400" />
+            <Image
+              src="/weather-logo.svg"
+              alt="Weather Logo"
+              width={44}
+              height={44}
+              className="rounded-full shadow-lg"
+            />
             <div>
               <h1 className="text-base font-bold text-white">Hệ Thống Dự Báo Lũ Lụt</h1>
-              <p className="text-xs text-gray-400">Vietnam Flood Forecast</p>
+              <p className="text-xs text-gray-400">Được phát triển bởi team Operis.vn</p>
             </div>
           </div>
 
@@ -266,11 +273,11 @@ export default function Home() {
               </select>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            <div className="flex items-center gap-2 overflow-hidden pr-2 py-1">
               <button onClick={() => setShowRainfallAnalysis(true)} className="p-2 bg-blue-600 hover:bg-blue-700 rounded shrink-0" title="Phân tích lượng mưa">
                 <CloudRain className="w-4 h-4 text-white" />
               </button>
-              <button onClick={() => setShowReservoirs(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700 shrink-0" title="Hồ chứa EVN">
+              <button onClick={() => setShowReservoirs(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700 shrink-0" title="Hồ chứa thuỷ điện">
                 <Droplets className="w-4 h-4 text-white" />
               </button>
               <button onClick={() => setShowFloodZones(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700 shrink-0" title="Dự báo">
@@ -279,14 +286,7 @@ export default function Home() {
               <button onClick={() => setShowDamAlerts(true)} className="p-2 bg-gray-800 rounded hover:bg-gray-700 relative shrink-0" title="Cảnh báo">
                 <Bell className="w-4 h-4 text-white" />
               </button>
-              <button
-                onClick={() => setShowDonateModal(true)}
-                className="p-2 bg-pink-600 hover:bg-pink-700 rounded flex items-center gap-1 shrink-0"
-                title="Ủng hộ dự án"
-              >
-                <Heart className="w-4 h-4 text-white" />
-                <span className="text-xs text-white hidden sm:inline">Ủng hộ</span>
-              </button>
+              <DonateButton3D onClick={() => setShowDonateModal(true)} />
             </div>
           </div>
         </div>
